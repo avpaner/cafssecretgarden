@@ -81,31 +81,28 @@
             align-items: center;
             width: 100%;
             max-width: 500px;
-            /* Always static, no floating */
-            position: static;
-            z-index: 1; /* Lower z-index as it's not floating over anything */
-            
-            /* Default styling for when it's stacked vertically (portrait mobile) */
+            /* Default styles for portrait mobile (when not in row layout) */
+            position: sticky; /* Re-add sticky for portrait mobile */
+            top: 10px; /* Stick closer to top for portrait mobile */
+            z-index: 10;
             background-color: rgba(255, 255, 255, 0.9);
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            padding: 20px; /* Reverted to 20px for better spacing */
+            padding: 10px; /* Reduced padding for portrait mobile */
             box-sizing: border-box;
-            margin-bottom: 20px; /* Space when stacked below input group */
+            margin-bottom: 20px;
             height: fit-content;
         }
 
-        /* For landscape mobile, tablets, and desktops (when main-content-area is row) */
-        @media (min-width: 640px) {
+        /* When main-content-area switches to row layout, canvas-preview-container should become static */
+        @media (min-width: 640px) { /* When main-content-area becomes row, this becomes static */
             .canvas-preview-container {
+                position: static; /* No longer sticky */
                 flex: 1 1 500px; /* Allow shrinking, prefer 500px base */
-                max-width: 500px; /* Maintain max-width for the canvas container */
-                
-                /* Remove specific styling when it's part of a row layout */
-                padding: 0;
-                background-color: transparent;
-                box-shadow: none;
-                margin-bottom: 0;
+                padding: 0; /* Remove padding when not sticky/floating */
+                background-color: transparent; /* Remove background when not sticky/floating */
+                box-shadow: none; /* Remove shadow when not sticky/floating */
+                margin-bottom: 0; /* Remove margin when not sticky/floating */
             }
         }
 
@@ -680,35 +677,18 @@
             opacity: 1;
             visibility: visible;
         }
-        /* New Loader CSS */
         .loader {
-            width: 32px;
-            height: 32px;
-            position: relative;
-            border-radius: 50%;
-            color: #D4AF37; /* Using accent gold for loader color */
-            animation: fill 1s ease-in infinite alternate;
+            border-top-color: var(--color-accent-gold); /* Use your accent color */
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
         }
-        .loader::before , .loader::after {
-            content: '';
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            border-radius: 50%;
-            left: 48px;
-            top: 0;
-            animation: fill 0.9s ease-in infinite alternate;
+        @-webkit-keyframes spinner {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
         }
-
-        .loader::after {
-            left: auto;
-            right: 48px;
-            animation-duration: 1.1s;
-        }
-
-        @keyframes fill {
-            0% {  box-shadow: 0 0 0 2px inset }
-            100%{ box-shadow: 0 0 0 10px inset }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Caption Customization Modal Specific Styles */
@@ -850,17 +830,23 @@
                         <button id="revertFiltersBtn" class="action-button mt-4 text-button" disabled>RESET</button>
                     </div>
                 </div>
-
-                <!-- Download button -->
-                <button id="downloadBtn" class="action-button text-button mt-4" disabled>
-                    Download Framed Picture
-                </button>
-                <!-- New Add Caption button -->
-                <button id="addCaptionBtn" class="action-button text-button mt-4" disabled>
-                    Add Caption for DP Blast
-                </button>
             </div>
         </div>
+
+        <button id="finalizePictureBtn" class="action-button text-button" disabled>
+            Finalize Picture
+        </button>
+        <button id="downloadBtn" class="action-button text-button" disabled>
+            Download Framed Picture
+        </button>
+
+        <!-- Hidden image element for the frame -->
+        <!-- IMPORTANT: For the frame to be HD, 'Frame.png' must be a high-resolution image file. -->
+        <!-- This image is used internally by JavaScript to draw the frame onto the canvas. -->
+        <!-- It is set to display: none; in CSS and should not be visible on the page directly. -->
+        <img id="frameImage" src="Frame.png" alt="Secret Garden Frame" style="display: none;">
+        <!-- New hidden image element for Facebook View overlay -->
+        <img id="facebookViewImage" src="Facebook_View.png" alt="Facebook View Overlay" style="display: none;">
     </div>
 
     <!-- Photo Source Modal -->
@@ -936,8 +922,7 @@
         const selectGalleryInput = document.getElementById('selectGalleryInput');
         const imageCanvas = document.getElementById('imageCanvas');
         const downloadBtn = document.getElementById('downloadBtn');
-        // Removed finalizePictureBtn
-        const addCaptionBtn = document.getElementById('addCaptionBtn'); // New: Add Caption button
+        const finalizePictureBtn = document.getElementById('finalizePictureBtn');
         const frameImage = document.getElementById('frameImage');
         const facebookViewImage = document.getElementById('facebookViewImage'); // New: Facebook View Image
         const ctx = imageCanvas.getContext('2d');
@@ -956,8 +941,8 @@
         const flipCameraButton = document.getElementById('flipCameraButton');
 
         const zoomInBtn = document.getElementById('zoomInBtn');
-        const zoomOutBtn = document.getElementById('zoomOutBtn');
-        const rotateLeftBtn = document.getElementById('rotateLeftBtn');
+        const zoomOutBtn = document = document.getElementById('zoomOutBtn');
+        const rotateLeftBtn = document = document.getElementById('rotateLeftBtn');
         const rotateRightBtn = document.getElementById('rotateRightBtn');
         const flipHorizontalBtn = document.getElementById('flipHorizontalBtn');
         const flipVerticalBtn = document.getElementById('flipVerticalBtn');
@@ -972,7 +957,7 @@
 
         // Generic Popup Elements
         const genericPopupModal = document.getElementById('genericPopupModal');
-        const popupCloseBtn = document.getElementById('popupCloseBtn');
+        const popupCloseBtn = document = document.getElementById('popupCloseBtn');
         const popupMessage = document.getElementById('popupMessage');
         const popupCountdown = document.getElementById('popupCountdown');
         const popupCaptionBox = document.getElementById('popupCaptionBox');
@@ -1168,9 +1153,8 @@
             filterSlider.disabled = !enabled; // Enable/disable filter slider
             revertFiltersBtn.disabled = !enabled;
 
-            // Removed finalizePictureBtn.disabled = !enabled;
+            finalizePictureBtn.disabled = !enabled;
             downloadBtn.disabled = !enabled;
-            addCaptionBtn.disabled = !enabled; // Enable/disable new Add Caption button
             facebookProfileSwitch.disabled = !enabled;
         }
 
@@ -1271,22 +1255,49 @@
                     link.href = drawFinalImage(); // Do NOT include Facebook overlay for download
                     link.click();
                     hideLoading();
+                    // Show caption customization modal after download
+                    showCaptionCustomizationModal();
+                }, 10); // Small delay
+            } else if (actionType === 'finalize') {
+                showLoading("Finalizing picture...");
+                setTimeout(() => {
+                    try {
+                        // Finalize always includes Facebook overlay if it's currently active on preview
+                        const imageDataUrl = drawFinalImage(); 
+                        const currentTransformState = {
+                            x: imageX,
+                            y: imageY,
+                            scale: scaleFactor,
+                            rotation: rotationAngle,
+                            flipH: flipH,
+                            flipV: flipV,
+                            brightness: brightness,
+                            contrast: contrast,
+                            saturation: saturation
+                        };
+                        localStorage.setItem('finalizedImageData', imageDataUrl);
+                        localStorage.setItem('finalizedImageTransformState', JSON.stringify(currentTransformState));
+                        console.log("Finalized picture and state saved to local storage.");
+
+                        let formattedTargetDate = "an unknown time";
+                        if (eventTargetDate) {
+                            const targetDateTime = new Date(eventTargetDate);
+                            formattedTargetDate = `${targetDateTime.toLocaleDateString()} at ${targetDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                        }
+                        hideLoading();
+                        showMessageBox(`Thank you for finalizing! This setting will be saved even if you exit the site. Please comeback on ${formattedTargetDate} in order to download your picture and join the DP Blast. Thank you!`);
+
+                    } catch (error) {
+                        console.error("Error saving finalized picture to local storage:", error);
+                        hideLoading();
+                        showMessageBox("Failed to save finalized picture. Please try again.", true);
+                    }
                 }, 10); // Small delay
             }
-            // Removed 'finalize' action
         }
 
         downloadBtn.addEventListener('click', () => handleAction('download'));
-        // Removed finalizePictureBtn.addEventListener('click', ...);
-
-        // New event listener for Add Caption button
-        addCaptionBtn.addEventListener('click', () => {
-            if (!userImage || !frameLoaded || !userImage.src || currentImageSource === 'placeholder') {
-                showMessageBox("Please upload a picture or take one with the webcam first to add a caption!");
-                return;
-            }
-            showCaptionCustomizationModal();
-        });
+        finalizePictureBtn.addEventListener('click', () => handleAction('finalize'));
 
 
         // --- Core Image Handling Functions ---
@@ -1839,7 +1850,7 @@
                     await loadImage(userImage);
                     setControlButtonsState(true); // Enable controls if a finalized image is loaded
                 } else {
-                    userImage.src = 'Placeholder.jpg'; // Default placeholder changed to Placeholder.jpg
+                    userImage.src = 'https://placehold.co/500x500/E0E0E0/ADADAD?text=Upload+Your+Image'; // Default placeholder
                     await loadImage(userImage, true);
                     currentImageSource = 'placeholder';
                     setControlButtonsState(false); // Controls remain disabled for placeholder
@@ -2024,13 +2035,13 @@
             offscreenCtx.drawImage(frameImage, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
             offscreenCtx.restore();
 
-            // Facebook Overlay is explicitly NOT drawn for final download
-            // if (isFacebookProfileMode && facebookViewImageLoaded) {
-            //     offscreenCtx.save();
-            //     offscreenCtx.drawImage(facebookViewImage, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
-            //     offscreenCtx.restore();
-            //     console.log("Facebook Mode: Drawing Facebook View overlay on top of final image.");
-            // }
+            // --- 4. Draw Facebook Overlay (if enabled, full natural resolution) ---
+            if (isFacebookProfileMode && facebookViewImageLoaded) {
+                offscreenCtx.save();
+                offscreenCtx.drawImage(facebookViewImage, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                offscreenCtx.restore();
+                console.log("Facebook Mode: Drawing Facebook View overlay on top of final image.");
+            }
 
             // Do NOT draw grid on final image
             // drawGrid(offscreenCtx, offscreenCanvas.width, offscreenCtx.height); 
