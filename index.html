@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Google Fonts for Playfair Display and Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --color-background: #FFFBEB;
@@ -63,7 +63,8 @@
             gap: 20px;
         }
 
-        @media (min-width: 768px) {
+        /* Apply row layout for tablets and desktops (md breakpoint) */
+        @media (min-width: 768px) { /* Tailwind's md breakpoint */
             .main-content-area {
                 flex-direction: row;
                 flex-wrap: wrap; /* Added to allow wrapping on larger screens */
@@ -93,7 +94,7 @@
             height: fit-content; /* Ensure it only takes needed height when sticky */
         }
 
-        @media (max-width: 767px) { /* Apply specifically to smaller screens */
+        @media (max-width: 639px) { /* Apply specifically to screens smaller than sm (e.g., portrait phones) */
             .canvas-preview-container {
                 max-width: 90%; /* Make it take 90% of viewport width */
                 padding: 10px; /* Reduce padding */
@@ -101,7 +102,8 @@
             }
         }
 
-        @media (min-width: 768px) {
+        /* Reset sticky behavior for landscape phones, tablets, and desktops (sm breakpoint) */
+        @media (min-width: 640px) { /* Tailwind's sm breakpoint */
             .canvas-preview-container {
                 flex: 1 1 500px; /* Allow shrinking, prefer 500px base */
                 max-width: 500px; /* Maintain max-width for the canvas container */
@@ -319,7 +321,7 @@
             display: none;
             background-color: #FFFFFF;
             border-radius: 0 0 12px 12px; /* Rounded bottom corners */
-            box-shadow: 0 44px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             padding: 20px;
             width: 100%;
             flex-direction: column;
@@ -1039,7 +1041,7 @@
         const CAMERA_PERMISSION_KEY = 'cameraPermissionStatus';
         let cameraPermissionStatus = localStorage.getItem(CAMERA_PERMISSION_KEY); // 'granted', 'denied', or null
 
-        let webcamPreviewFlip = 1; // 1 for no flip, -1 for horizontal flip on webcam preview
+        let webcamPreviewFlip = -1; // Changed to -1 for default mirror mode
 
         let isFacebookProfileMode = false; // New global variable for the Facebook profile view
         let circleOverlayOpacity = 0; // New global variable for the black overlay opacity
@@ -1136,7 +1138,7 @@
             selectGalleryBtn.style.display = 'block'; // Show gallery button
             stopWebcam(); // Always stop webcam when modal is opened to reset state
             setWebcamControlButtonsState(false); // Disable webcam controls
-            webcamPreviewFlip = 1; // Reset live video flip for next camera session
+            webcamPreviewFlip = -1; // Reset live video flip to mirror mode for next camera session
             applyWebcamTransforms(); // Clear any transforms on video element
         }
 
@@ -2157,7 +2159,7 @@
             webcamVideo.pause();
             webcamVideo.currentTime = 0;
             setWebcamControlButtonsState(false);
-            webcamPreviewFlip = 1; // Reset flip for next session
+            webcamPreviewFlip = -1; // Reset flip to mirror mode for next session
             applyWebcamTransforms(); // Clear any transforms on video element
             console.log("Webcam stream stopped and state reset.");
         }
@@ -2185,12 +2187,14 @@
 
         captureWebcamPhotoBtn.addEventListener('click', async () => {
             console.log("Capture Webcam Photo button clicked.");
+            showLoading("Capturing photo..."); // Show loading immediately
             let imgSrc = captureFrame();
 
             if (imgSrc) {
                 setImageOnCanvas(imgSrc, webcamPreviewFlip); // Pass the flip state to setImageOnCanvas
                 hidePhotoSourceModal();
             } else {
+                hideLoading(); // Hide loading if capture fails
                 showMessageBox("Could not capture photo. Please ensure camera is started.", true);
             }
         });
@@ -2205,8 +2209,8 @@
             console.log("Flip Camera button clicked. Current facing mode:", webcamCurrentFacingMode);
             // Toggle facing mode ('user' for front, 'environment' for rear)
             webcamCurrentFacingMode = (webcamCurrentFacingMode === 'user') ? 'environment' : 'user';
-            webcamPreviewFlip = 1; // Reset live video flip when switching cameras, as orientation might change
-            console.log("New facing mode:", webcamCurrentFacingMode, "webcamPreviewFlip reset to 1.");
+            webcamPreviewFlip = -1; // Reset live video flip to mirror mode when switching cameras, as orientation might change
+            console.log("New facing mode:", webcamCurrentFacingMode, "webcamPreviewFlip reset to -1.");
             await requestCameraPermissionAndPlay(); // Restart webcam with new facing mode
         });
 
