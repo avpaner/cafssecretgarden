@@ -1,1648 +1,1813 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CAFS' Secret Garden - Crop Personality Test</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght%40700&family=Lora:wght%40400%3B700&display=swap" rel="stylesheet">
-  <!-- html2canvas is no longer used for download, but kept if needed for other capture features -->
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-  <style>
-    :root {
-      --primary-gold: #B8860B; /* DarkGoldenrod - a rich, deep gold */
-      --light-gold: #DAA520; /* Goldenrod - a vibrant gold */
-      --soft-cream: #FFF8E1; /* A very light, warm cream */
-      --warm-white: #FCF8E8; /* Slightly whiter than soft-cream */
-      --accent-gold: #FFD700; /* Gold - for subtle highlights */
-      --text-dark: #222; /* Made darker for better readability */
-      --text-light: #444; /* Made darker for better readability */
-      --shadow-color: rgba(0, 0, 0, 0.15);
-      --border-color: rgba(0,0,0,0.08);
-    }
-
-    html, body {
-      box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Lora', serif;
-      /* Updated background to use the image */
-      background-image: url('Background.png'); /* Changed to local path */
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed; /* Ensures background stays fixed during scroll */
-      color: var(--text-dark);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 10px; /* Reduced padding */
-      min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    .header-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-bottom: 0; /* Removed bottom margin to reduce space */
-        opacity: 0; /* Initially hidden for fade-in effect */
-        transition: opacity 0.7s ease-in; /* Transition for fade-in */
-    }
-    .header-content.visible {
-        opacity: 1;
-    }
-
-    /* The header logo, separate from splash logo */
-    .header-logo {
-        width: clamp(180px, 40vw, 350px); /* Increased min/max width for larger logo */
-        height: auto;
-        margin-bottom: 0; /* No bottom margin here, spacing is on header-content */
-        /* Subtle white glow for the logo */
-        filter: drop-shadow(0 0 4px white) drop-shadow(0 0 8px white) drop-shadow(0 0 12px white); /* Adjusted glow for more visibility */
-        opacity: 0; /* Initially hidden, will fade in after splash screen fades out */
-        transition: opacity 0.7s ease-in; /* Fade in with header-content */
-    }
-
-    /* Butterfly GIF styling for the modal */
-    .modal-butterfly-gif {
-        width: clamp(80px, 15vw, 150px); /* Responsive size for butterfly */
-        height: auto;
-        margin-bottom: 10px; /* Space between butterfly and heading */
-        filter: drop-shadow(0 0 3px rgba(255,255,255,0.7)); /* Subtle glow for butterfly */
-    }
-
-
-    h1 {
-      font-family: 'Playfair Display', serif;
-      text-align: center;
-      color: var(--primary-gold); /* Gold text */
-      font-size: clamp(2.2rem, 5vw, 3.2rem); /* Responsive font size */
-      text-shadow: 0 0 5px white, 0 0 10px white, 0 0 15px white; /* White glow */
-      letter-spacing: 0.05em;
-      margin: 0; /* Remove default margin as it's in a container */
-    }
-
-    /* Splash Screen Styling */
-    #splashScreen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background-color: white; /* Start with white background */
-      z-index: 2000;
-      opacity: 1;
-      visibility: visible;
-      transition: opacity 1s ease-out, visibility 1s ease-out;
-    }
-
-    .splash-bg-image {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url('Background.png'); /* Changed to local path */
-        background-size: cover;
-        background-position: center;
-        opacity: 0; /* Start invisible */
-        animation: bgFadeIn 1.5s ease-out forwards; /* Fade in background image */
-        z-index: -1; /* Behind content */
-    }
-
-    @keyframes bgFadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    .splash-content-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        opacity: 0; /* Initially hidden, will fade in after background */
-        animation: contentFadeIn 0.5s ease-out forwards 1.5s; /* Start after background fades */
-        padding: clamp(2rem, 5vw, 3rem);
-        border-radius: 1.5rem;
-        max-width: 600px;
-        width: 90%;
-        box-sizing: border-box;
-    }
-
-    @keyframes contentFadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    #splashLogo {
-      width: clamp(250px, 55vw, 450px);
-      height: auto;
-      margin-bottom: 20px; /* Space between logo and button */
-      opacity: 0; /* Start hidden */
-      transform: scale(2); /* Start zoomed in */
-      animation: logoFadeZoomOut 2s ease-out forwards 2s; /* Start after contentFadeIn */
-      /* Subtle white glow for the logo */
-      filter: drop-shadow(0 0 2px white) drop-shadow(0 0 4px white) drop-shadow(0 0 6px white); /* Corrected property name */
-    }
-
-    @keyframes logoFadeZoomOut {
-      from { opacity: 0; transform: scale(2); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    /* No specific animation for splash logo on exit, it will fade with splashScreen.hidden */
-
-
-    #takeTestBtn {
-      background-color: var(--primary-gold);
-      color: white;
-      border: none;
-      padding: 1rem 2.5rem;
-      border-radius: 0.8rem;
-      cursor: pointer;
-      font-size: clamp(1rem, 3vw, 1.2rem);
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-      opacity: 0; /* Start hidden */
-      animation: buttonFadeIn 0.5s ease-out forwards 1.8s; /* Button appears by 2.3s */
-      display: flex; /* To center text */
-      align-items: center;
-      justify-content: center;
-      white-space: nowrap; /* Ensure text fits on one line */
-    }
-
-    #takeTestBtn:hover {
-      background-color: var(--light-gold);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    }
-
-    @keyframes buttonFadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Class to hide splash screen */
-    #splashScreen.hidden {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-
-    .quiz-container {
-      background: var(--soft-cream);
-      border-radius: 1.5rem; /* Larger border-radius for elegance */
-      padding: clamp(1.5rem, 5vw, 2.5rem); /* Responsive padding */
-      max-width: 750px; /* Slightly wider */
-      width: 95%; /* Responsive width */
-      box-shadow: 0 10px 30px var(--shadow-color); /* More pronounced shadow */
-      border: 1px solid var(--border-color);
-      z-index: 1;
-      position: relative; /* For potential future internal elements */
-      margin-top: 0; /* Removed top margin to remove space */
-      opacity: 0; /* Initially hidden for fade-in effect */
-      transition: opacity 0.7s ease-in; /* Transition for fade-in */
-    }
-
-    .progress-container {
-      width: 100%;
-      background-color: #e0e0e0;
-      border-radius: 0.5rem;
-      margin-bottom: 2rem;
-      overflow: hidden;
-      height: 0.6rem; /* Thinner progress bar */
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
-    }
-
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background-color: var(--light-gold); /* Golden loading bar on quiz page */
-      border-radius: 0.5rem;
-      transition: width 0.4s ease-in-out;
-    }
-
-    .question-wrapper {
-      min-height: 280px; /* Consistent height for smooth transitions */
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 0 1rem; /* Inner padding for questions */
-    }
-
-    .question {
-      display: none;
-      animation: fadeIn 0.7s ease-out forwards; /* Longer fade in */
-    }
-
-    .question.active {
-      display: block;
-    }
-
-    .question h3 {
-      font-family: 'Playfair Display', serif;
-      color: var(--primary-gold);
-      margin-bottom: 1.5rem;
-      font-size: clamp(1.3rem, 3vw, 1.8rem);
-      text-align: center;
-      line-height: 1.4;
-    }
-
-    .options label {
-      display: block;
-      background: var(--warm-white);
-      padding: 1rem 1.2rem; /* More generous padding */
-      margin: 0.8rem 0;
-      border-radius: 0.75rem; /* Softer rounded corners */
-      cursor: pointer;
-      border: 2px solid var(--border-color);
-      transition: all 0.3s ease;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.08); /* Softer shadow */
-    }
-
-    .options label:hover {
-      background: #FFFAE6; /* Very light golden on hover */
-      border-color: var(--light-gold);
-      transform: translateY(-3px);
-      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-    }
-
-    .options input[type="radio"] {
-      display: none;
-    }
-
-    .options input[type="radio"]:checked + label {
-      background: var(--golden-checked);
-      border-color: var(--primary-gold);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      transform: scale(1.01); /* Subtle pop */
-      position: relative;
-      z-index: 2; /* Ensure checked item is on top */
-    }
-
-    .navigation-buttons {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 2.5rem;
-      gap: 1rem; /* Space between buttons */
-    }
-
-    .navigation-buttons button {
-      background-color: var(--light-gold);
-      color: white;
-      border: none;
-      padding: 0.8rem 1.8rem; /* Responsive padding */
-      border-radius: 0.6rem;
-      cursor: pointer;
-      font-size: clamp(1.5rem, 4vw, 2rem); /* Larger font size for arrows */
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .navigation-buttons button:hover:not(:disabled) {
-      background-color: var(--primary-gold);
-      transform: translateY(-3px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-    }
-
-    .navigation-buttons button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-      opacity: 0.6;
-      box-shadow: none;
-      transform: translateY(0);
-    }
-
-    #submitQuiz { /* This button is now removed from display logic */
-      display: none;
-    }
-
-    #result {
-      display: none;
-      margin-top: 1rem; /* Added top margin */
-      padding: clamp(2rem, 6vw, 3rem);
-      background: var(--soft-cream);
-      border-radius: 2rem; /* Even larger border-radius */
-      border: 2px dashed var(--light-gold);
-      text-align: center;
-      box-shadow: 0 12px 35px var(--shadow-color);
-      animation: fadeIn 1s ease-out forwards; /* Slower fade in */
-      max-width: 700px;
-      width: 95%;
-      position: relative;
-      z-index: 0;
-    }
-
-    #result h2 {
-      font-family: 'Playfair Display', serif;
-      color: var(--primary-gold);
-      font-size: clamp(2rem, 5vw, 3rem);
-      margin-top: 0; /* No top margin */
-      margin-bottom: 0; /* No bottom margin */
-      letter-spacing: 0.03em;
-    }
-    #result img {
-      max-width: clamp(180px, 35vw, 300px); /* Slightly bigger image size */
-      height: auto;
-      border-radius: 1.2rem;
-      margin: 0 auto 0; /* Adjusted margin: 0 top, auto left/right, 0 bottom */
-      display: block; /* Ensure image is a block element for margin auto to work */
-      border: none; /* No border */
-      box-shadow: none; /* No shadow for the image itself */
-      animation: scaleIn 1s ease-out forwards; /* Longer scale in */
-      transition: transform 0.3s ease;
-    }
-    #result img:hover {
-        transform: scale(1.03); /* Subtle hover for image */
-    }
-    #result p {
-      font-size: clamp(1rem, 2.5vw, 1.15rem);
-      line-height: 1.8;
-      margin-bottom: 0.8rem;
-      color: var(--text-light);
-    }
-    /* Specific styling for details text in result panel */
-    #result p.details { /* Targeted specifically for details paragraph */
-      text-align: justify; /* Justify text */
-    }
-    #result .category, #result .description-title {
-      font-weight: bold;
-      color: var(--primary-gold);
-      margin-top: 1.5rem;
-      font-size: clamp(1.1rem, 2.8vw, 1.3rem);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      text-align: center; /* Ensure description title is centered */
-    }
-    #result .scientific-name {
-      font-style: italic;
-      color: var(--text-light);
-      font-size: clamp(0.9rem, 2.2vw, 1rem);
-      margin-top: 0.2rem; /* Reduced space */
-      margin-bottom: 1rem;
-    }
-    #result .quote {
-      font-family: 'Playfair Display', serif; /* Quote in Playfair */
-      font-style: italic;
-      color: var(--primary-gold);
-      margin-top: 2rem;
-      font-size: clamp(1.1rem, 2.7vw, 1.25rem);
-      padding: 1rem 1.5rem;
-      background-color: #FFFDE7; /* Very light golden background for quote */
-      border-left: 5px solid var(--light-gold);
-      border-radius: 0.75rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .divider {
-      border-top: 1px dashed var(--light-gold); /* Dashed gold divider */
-      margin: 2rem auto;
-      width: 95%; /* Extended width */
-    }
-
-    /* Consolidated action buttons container */
-    #actionButtons {
-      margin-top: 2.5rem;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-      width: 95%;
-      max-width: 750px;
-      display: none; /* Hidden by default, shown by JS */
-    }
-
-    #actionButtons button {
-      background-color: var(--primary-gold);
-      color: white;
-      border: none;
-      padding: 0.8rem 1.5rem;
-      border-radius: 0.6rem;
-      cursor: pointer;
-      font-size: clamp(0.9rem, 2.5vw, 1rem);
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      display: flex; /* Enable flexbox for content alignment */
-      align-items: center; /* Center content vertically */
-      justify-content: center; /* Center horizontally */
-    }
-
-    #actionButtons button:hover:not(:disabled) {
-      background-color: var(--light-gold);
-      transform: translateY(-3px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-    }
-
-    /* Loading state for buttons */
-    .loading-button {
-      cursor: not-allowed !important;
-      opacity: 0.7;
-      background-color: #cccccc !important;
-      transform: translateY(0) !important;
-      box-shadow: none !important;
-    }
-
-    .spinner {
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-top: 3px solid #fff;
-      border-radius: 50%;
-      width: 1em; /* Relative to font size */
-      height: 1em; /* Relative to font size */
-      animation: spin 1s linear infinite;
-      margin-left: 0.5em; /* Space between text and spinner */
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-
-    /* Loading Overlay Animation */
-    #loadingOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.8); /* Semi-transparent white background for overlay */
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.6s ease-out, visibility 0.6s ease-out; /* Smoother transition */
-    }
-
-    #loadingOverlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .loading-bar-container {
-      width: 80%;
-      max-width: 500px;
-      height: 20px;
-      background-color: rgba(224, 224, 224, 0.5); /* Semi-transparent track to show body background */
-      border-radius: 10px;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
-      position: relative;
-      margin-top: 50px;
-    }
-
-    #loadingBarInner {
-      height: 100%;
-      width: 0%;
-      /* Background image fill for the loading bar */
-      background-image: url('Background.png'); /* Changed to local path */
-      background-size: cover;
-      background-position: center;
-      border-radius: 10px;
-      transition: width 2.5s linear; /* Slightly longer animation */
-    }
-
-    #loadingKey {
-      position: absolute;
-      top: 50%; /* Center vertically */
-      left: 0%;
-      width: 180px; /* Made key larger */
-      height: auto;
-      transform: translate(-50%, -50%); /* Center precisely, initial transform */
-      animation: flyAcross 2.5s linear forwards; /* Only horizontal movement */
-      display: none;
-      z-index: 1001; /* Ensure key is above the loading bar */
-    }
-
-    #loadingOverlay.active #loadingKey {
-        display: block;
-    }
-
-    #loadingText {
-        font-family: 'Lora', serif;
-        color: var(--text-dark);
-        font-size: clamp(1.1rem, 3vw, 1.5rem);
-        margin-top: 20px;
-        opacity: 0;
-        animation: fadeIn 0.5s forwards 0.5s; /* Fade in after a short delay */
-    }
-
-    .dot-wave {
-        animation: wave 1.4s infinite ease-in-out;
-    }
-    .dot-wave:nth-child(1) { animation-delay: 0.1s; }
-    .dot-wave:nth-child(2) { animation-delay: 0.2s; }
-    .dot-wave:nth-child(3) { animation-delay: 0.3s; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes scaleIn {
-      from { opacity: 0; transform: scale(0.8); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes flyAcross {
-      0% { left: 0%; transform: translate(-50%, -50%); } /* Ensure initial vertical centering */
-      100% { left: 100%; transform: translate(-50%, -50%); } /* Ensure final vertical centering */
-    }
-
-    @keyframes wave {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-    }
-
-
-    /* Modal Styles */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000; /* Above everything else */
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .modal-content {
-      background: var(--soft-cream);
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-      text-align: center;
-      max-width: 450px;
-      width: 90%;
-      transform: translateY(-20px);
-      opacity: 0;
-      transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-      position: relative; /* Needed for absolute positioning of close button */
-    }
-
-    .modal-overlay.active .modal-content {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    .modal-content h3 {
-      font-family: 'Playfair Display', serif;
-      color: var(--primary-gold);
-      font-size: clamp(1.4rem, 4vw, 1.8rem);
-      margin-top: 0;
-      margin-bottom: 1rem;
-    }
-
-    .modal-content p {
-      font-size: clamp(0.9rem, 2.5vw, 1rem);
-      color: var(--text-dark);
-      margin-bottom: 1.5rem;
-    }
-
-    .modal-buttons {
-      display: flex;
-      flex-direction: column; /* Stack buttons vertically */
-      align-items: center; /* Center buttons */
-      gap: 0.8rem; /* Space between stacked buttons */
-      margin-top: 1.5rem; /* Space above buttons */
-    }
-
-    .modal-buttons button {
-      background-color: var(--primary-gold);
-      color: white;
-      border: none;
-      padding: 0.8rem 1.5rem;
-      border-radius: 0.6rem;
-      cursor: pointer;
-      font-size: clamp(0.9rem, 2.5vw, 1rem);
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      width: 80%; /* Make buttons wider in modal */
-      max-width: 250px; /* Limit max width */
-      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-    }
-
-    .modal-buttons button:hover {
-      background-color: var(--light-gold);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-
-    .modal-buttons .cancel-btn {
-      background-color: #888;
-      margin-top: 1rem; /* Separate cancel button more */
-    }
-
-    .modal-buttons .cancel-btn:hover {
-      background-color: #666;
-    }
-
-    /* Dark Mode specific styles for capture */
-    .dark-mode-capture {
-      background: #1a1a1a !important; /* Very dark grey background */
-      border-color: #444444 !important; /* Darker grey border */
-    }
-
-    .dark-mode-capture h2,
-    .dark-mode-capture .category,
-    .dark-mode-capture .description-title {
-      color: #FFD700 !important; /* Bright gold for headings */
-      text-shadow: none !important; /* Remove text shadow for dark mode capture */
-    }
-
-    .dark-mode-capture p {
-      color: #f0f0f0 !important; /* Off-white text for paragraphs */
-      text-shadow: none !important; /* Remove text shadow for dark mode capture */
-    }
-
-    .dark-mode-capture .quote {
-      background-color: #2a2a2a !important; /* Slightly lighter dark background for quote */
-      border-left-color: #FFD700 !important; /* Bright gold border for quote */
-      color: #f0f0f0 !important; /* Off-white text for quote */
-    }
-
-    .dark-mode-capture .divider {
-      border-top-color: #444444 !important; /* Darker border for divider */
-    }
-
-    /* Instagram Follow Modal Specific Styles */
-    #instagramFollowModal .modal-content {
-        background: linear-gradient(145deg, #FFF8E1, #FCF8E8); /* Soft cream gradient */
-        border: 2px solid var(--light-gold);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
-        padding: clamp(1.5rem, 5vw, 2.5rem);
-        max-width: 500px;
-    }
-
-    #instagramFollowModal .modal-content h3 {
-        color: var(--primary-gold);
-        font-size: clamp(1.6rem, 5vw, 2.2rem);
-        margin-bottom: 0.8rem;
-        text-shadow: 0 0 5px rgba(255,255,255,0.7);
-    }
-
-    #instagramFollowModal .modal-content p {
-        font-size: clamp(1rem, 2.8vw, 1.15rem);
-        color: var(--text-dark);
-        margin-bottom: 0.5rem; /* Reduced margin for text below QR */
-        line-height: 1.6;
-    }
-
-    /* New styles for the list and link */
-    .keep-magic-text {
-        font-family: 'Playfair Display', serif;
-        font-size: clamp(1.1rem, 3vw, 1.4rem);
-        color: var(--primary-gold);
-        margin-top: 1.5rem;
-        margin-bottom: 0.8rem;
-        font-weight: bold;
-        text-align: center; /* Centered as requested */
-    }
-
-    .magic-list {
-        list-style: decimal; /* Use decimal for numbered list */
-        padding-left: 1.5rem; /* Add padding for numbers */
-        margin: 0 auto; /* Center the list itself */
-        text-align: left; /* Make list items left-aligned */
-        font-size: clamp(0.95rem, 2.5vw, 1.05rem);
-        color: var(--text-dark);
-        line-height: 1.6;
-        max-width: 80%; /* Constrain width to help with centering */
-    }
-
-    .magic-list li {
-        margin-bottom: 0.5rem;
-    }
-
-    .magic-list a {
-        color: var(--primary-gold);
-        text-decoration: none;
-        font-weight: bold;
-        transition: color 0.2s ease;
-    }
-
-    .magic-list a:hover {
-        color: var(--light-gold);
-        text-decoration: underline;
-    }
-
-
-    #instagramFollowModal .instagram-qr-code {
-        /* Removed as per request */
-        display: none;
-    }
-
-    #instagramFollowModal .instagram-handle {
-        /* This element is now removed from HTML as per request, but keeping style for reference */
-        display: none;
-    }
-
-    #instagramFollowModal .modal-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
-        margin-top: 2rem; /* Adjusted margin for the buttons */
-    }
-
-    #instagramFollowModal .modal-buttons button {
-        background-color: var(--primary-gold);
-        color: white;
-        padding: 0.9rem 2rem;
-        border-radius: 0.7rem;
-        font-size: clamp(0.9rem, 2.5vw, 1rem);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    #instagramFollowModal .modal-buttons button:hover {
-        background-color: var(--light-gold);
-        transform: translateY(-3px);
-        box-shadow: 0 6px 15px rgba(0,0,0,0.3);
-    }
-
-    /* Close button styling for modals */
-    .close-modal-btn {
-      position: absolute;
-      top: 30px; /* Increased top spacing */
-      right: 20px; /* Adjusted for more space */
-      background: none;
-      border: none;
-      font-size: 1.8rem; /* Larger 'X' */
-      color: var(--primary-gold);
-      cursor: pointer;
-      padding: 5px;
-      line-height: 1;
-      transition: transform 0.2s ease, color 0.2s ease;
-      font-weight: bold;
-    }
-
-    .close-modal-btn:hover {
-      transform: scale(1.1);
-      color: var(--light-gold);
-    }
-
-
-    /* Media Queries for Responsiveness */
-    @media (max-width: 768px) {
-      h1 {
-        font-size: clamp(1.8rem, 6vw, 2.5rem);
-        margin-bottom: 2rem;
-      }
-      .quiz-container {
-        padding: clamp(1rem, 4vw, 2rem);
-        border-radius: 1rem;
-      }
-      .question-wrapper {
-        min-height: 220px;
-      }
-      .question h3 {
-        font-size: clamp(1.2rem, 3.5vw, 1.6rem);
-        margin-bottom: 1rem;
-      }
-      .options label {
-        padding: 0.8rem 1rem;
-        margin: 0.6rem 0;
-        border-radius: 0.6rem;
-      }
-      .navigation-buttons {
-        margin-top: 2rem;
-        flex-direction: column; /* Stack buttons on smaller screens */
-        gap: 0.8rem;
-      }
-      .navigation-buttons button {
-        padding: 0.7rem 1.2rem;
-        font-size: clamp(1.2rem, 3.5vw, 1.6rem); /* Adjust arrow size for mobile */
-        min-width: unset; /* Remove min-width to allow full flexibility */
-      }
-      #result {
-        padding: clamp(1.5rem, 5vw, 2.5rem);
-        border-radius: 1.5rem;
-        margin-top: 1rem; /* Adjust for mobile */
-      }
-      #result h2 {
-        font-size: clamp(1.8rem, 5.5vw, 2.5rem);
-        margin-top: 0; /* Adjust for mobile */
-      }
-      #result img {
-        max-width: clamp(150px, 30vw, 250px); /* Adjust for mobile */
-        margin: 0 auto 0; /* Adjust for mobile */
-      }
-      #result p {
-        font-size: clamp(0.95rem, 2.4vw, 1.1rem);
-        line-height: 1.6;
-      }
-      #result .category, #result .description-title {
-        font-size: clamp(1rem, 2.6vw, 1.2rem);
-        margin-top: 1rem;
-      }
-      #result .scientific-name {
-        font-size: clamp(0.85rem, 2.1vw, 0.95rem);
-      }
-      #result .quote {
-        font-size: clamp(0.9rem, 2.5vw, 1.15rem);
-        padding: 0.8rem 1.2rem;
-        margin-top: 1.5rem;
-        border-left-width: 3px;
-        border-radius: 0.6rem;
-      }
-      .divider {
-        margin: 1.5rem auto;
-        width: 70%;
-      }
-      #actionButtons {
-        margin-top: 1.5rem;
-        flex-direction: column; /* Stack share buttons too */
-        gap: 0.8rem;
-      }
-      #actionButtons button {
-        max-width: 100%; /* Full width on small screens */
-      }
-      #loadingKey {
-        width: 120px; /* Smaller key on mobile */
-        top: 50%; /* Keep centered */
-      }
-      .header-logo { /* Adjust placeholder size for mobile */
-        width: clamp(100px, 30vw, 200px); /* Increased size for mobile */
-      }
-      .splash-content-wrapper {
-        padding: clamp(1.5rem, 4vw, 2.5rem);
-      }
-      #splashLogo {
-        width: clamp(200px, 50vw, 350px);
-      }
-      /* Instagram Follow Modal Responsive Adjustments */
-      #instagramFollowModal .modal-content {
-          padding: clamp(1rem, 4vw, 2rem);
-      }
-      #instagramFollowModal .modal-buttons button {
-          padding: 0.7rem 1.5rem;
-          font-size: clamp(0.8rem, 2.2vw, 0.9rem);
-      }
-    }
-
-    @media (max-width: 480px) {
-      body {
-        padding: 15px;
-      }
-      h1 {
-        font-size: clamp(1.6rem, 7vw, 2.2rem);
-        margin-bottom: 1.5rem;
-      }
-      .quiz-container {
-        padding: 1rem;
-        border-radius: 1rem;
-      }
-      .question-wrapper {
-        min-height: 200px;
-      }
-      .question h3 {
-        font-size: clamp(1.1rem, 4.5vw, 1.4rem);
-        margin-bottom: 0.8rem;
-      }
-      .options label {
-        padding: 0.7rem 0.8rem;
-        margin: 0.5rem 0;
-        border-radius: 0.5rem;
-      }
-      .navigation-buttons {
-        margin-top: 1.5rem;
-        gap: 0.6rem;
-      }
-      .navigation-buttons button {
-        padding: 0.6rem 1rem;
-        font-size: clamp(1rem, 3vw, 1.2rem); /* Adjust arrow size for mobile */
-      }
-      #result {
-        padding: 1.5rem;
-        border-radius: 1rem;
-        margin-top: 1rem; /* Adjust for mobile */
-      }
-      #result h2 {
-        font-size: clamp(1.6rem, 6.5vw, 2.2rem);
-        margin-top: 0; /* Adjust for mobile */
-      }
-      #result img {
-        max-width: clamp(120px, 28vw, 180px); /* Adjust for mobile */
-        margin: 0 auto 0; /* Adjust for mobile */
-      }
-      #result p {
-        font-size: clamp(0.9rem, 2.8vw, 1rem);
-        line-height: 1.5;
-      }
-      #result .category, #result .description-title {
-        font-size: clamp(0.95rem, 3.2vw, 1.1rem);
-        margin-top: 0.8rem;
-      }
-      #result .scientific-name {
-        font-size: clamp(0.8rem, 2.5vw, 0.9rem);
-      }
-      #result .quote {
-        font-size: clamp(0.9rem, 3vw, 1rem);
-        padding: 0.7rem 1rem;
-        margin-top: 1rem;
-        border-left-width: 2px;
-        border-radius: 0.5rem;
-      }
-      .divider {
-        margin: 1rem auto;
-        width: 60%;
-      }
-      .loading-bar-container {
-        width: 95%;
-      }
-      #loadingKey {
-        width: 100px;
-        top: 50%; /* Keep centered */
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Garden Frame Adder</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts for Playfair Display and Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-background: #FFFBEB;
+            --color-primary-text: #7E603B;
+            --color-accent-gold: #D4AF37;
+            --color-light-gold: #FCE38A;
+            --color-dark-brown: #5A432A;
+        }
+
+        body {
+            font-family: 'Playfair Display', serif; /* Changed font to Playfair Display */
+            background-color: var(--color-background); /* Using CSS variable */
+            background-image: url('background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            backdrop-filter: blur(5px); /* Added blur effect to the background */
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9); /* Changed to rgba for background translucency */
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .main-content-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .main-content-area {
+                flex-direction: row;
+                flex-wrap: wrap; /* Added to allow wrapping on larger screens */
+                align-items: flex-start;
+                justify-content: center;
+                gap: 30px;
+            }
+        }
+
+        /* New container for canvas and its preview text */
+        .canvas-preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px; /* Match canvas max-width */
+        }
+        @media (min-width: 768px) {
+            .canvas-preview-container {
+                flex: 1 1 500px; /* Allow shrinking, prefer 500px base */
+                max-width: 500px; /* Maintain max-width for the canvas container */
+            }
+        }
+
+        canvas {
+            border: none;
+            border-radius: 8px;
+            background-color: #FFFDE7; /* Still a light off-white for canvas background */
+            max-width: 100%;
+            height: auto;
+            display: block;
+            touch-action: none;
+            cursor: grab;
+            flex-shrink: 0;
+            width: 100%; /* Ensure canvas always takes 100% of its parent's width */
+            aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+        }
+
+        canvas.grabbing {
+            cursor: grabbing;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .input-group label {
+            font-weight: 600;
+            color: var(--color-primary-text);
+            margin-bottom: 10px;
+            font-size: 1.25em; /* Changed font size to match headers */
+            font-family: 'Playfair Display', serif; /* Explicitly set font */
+        }
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--color-accent-gold);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
+            font-family: 'Inter', sans-serif; /* Applied Inter font */
+        }
+        .file-input-wrapper:hover {
+            background-color: var(--color-dark-brown);
+            transform: translateY(-1px);
+        }
+        .file-input-wrapper i {
+            margin-right: 8px;
+        }
+
+        .action-button {
+            background-color: var(--color-accent-gold);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
+            font-weight: 600;
+            border: none;
+            margin-top: 10px; /* Default margin-top for action buttons */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif; /* Applied Inter font */
+        }
+        .action-button:hover {
+            background-color: var(--color-dark-brown);
+            transform: translateY(-1px);
+        }
+        .action-button:disabled {
+            background-color: var(--color-light-gold);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .action-button i {
+            margin-right: 8px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-button {
+            background-color: var(--color-dark-brown);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 6px rgba(90, 67, 42, 0.3);
+            font-weight: 600;
+            border: none;
+            width: 100%;
+            margin-bottom: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif; /* Applied Inter font */
+        }
+        .modal-button:hover {
+            background-color: var(--color-primary-text);
+            transform: translateY(-1px);
+        }
+        .modal-button i {
+            margin-right: 8px;
+        }
+        .modal-button:last-child {
+            margin-bottom: 0;
+        }
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 15px;
+            font-size: 1.6em;
+            cursor: pointer;
+            color: var(--color-light-gold);
+            transition: color 0.2s ease;
+        }
+        .modal-close:hover {
+            color: var(--color-accent-gold);
+        }
+
+        /* Right Sidebar for Controls */
+        .right-sidebar {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 15px;
+        }
+        @media (min-width: 768px) {
+            .right-sidebar {
+                flex: 1 1 300px; /* Allow shrinking, prefer 300px base */
+                max-width: 300px; /* Maintain max-width for the sidebar */
+            }
+        }
+
+        /* New Control Group Styling */
+        .control-group {
+            background-color: #FFFFFF; /* White background for control groups */
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Softer shadow for groups */
+            padding: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 1; /* Set opacity to 100% for control groups */
+        }
+        .control-group h3 {
+            margin-bottom: 15px;
+            text-align: center;
+            font-family: 'Playfair Display', serif; /* Explicitly set font */
+        }
+
+
+        /* Control Buttons Styling */
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 10px; /* Space between rows of buttons */
+        }
+        .control-buttons button {
+            background-color: var(--color-light-gold);
+            color: var(--color-primary-text);
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 1px 4px rgba(252, 227, 138, 0.4);
+            flex-grow: 1;
+            min-width: 44px; /* Consistent size for icon-only buttons */
+            height: 44px; /* Consistent size for icon-only buttons */
+            font-size: 1.2em; /* Larger icon size */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', sans-serif; /* Applied Inter font */
+        }
+        /* Style for text-only buttons within control groups */
+        .control-group .text-button {
+            padding: 10px 20px; /* More padding for text buttons */
+            font-size: 1em; /* Standard font size for text */
+            min-width: unset; /* Remove min-width constraint for text buttons */
+            height: auto; /* Allow height to adjust to content */
+        }
+
+        @media (min-width: 768px) {
+            .control-buttons button {
+                padding: 10px 12px;
+                font-size: 1.2em;
+                flex-grow: 0;
+            }
+        }
+        .control-buttons button:hover {
+            background-color: var(--color-accent-gold);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(212, 175, 55, 0.5);
+        }
+        .control-buttons button:disabled {
+            background-color: #FEF3C7;
+            color: var(--color-light-gold);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Sliders specific styles */
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-top: 5px; /* Reduced margin as it's inside control-group */
+        }
+        .slider-group label {
+            font-weight: 600;
+            color: var(--color-primary-text);
+            margin-bottom: 5px;
+            font-size: 0.95em;
+            font-family: 'Inter', sans-serif; /* Applied Inter font */
+        }
+        .slider-group input[type="range"] {
+            width: 90%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--color-light-gold);
+            outline: none;
+            opacity: 0.9;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--color-accent-gold);
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(212, 175, 55, 0.4);
+        }
+        .slider-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--color-accent-gold);
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(212, 175, 55, 0.4);
+        }
+
+        /* Custom Toggle Switch Styles */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: var(--color-light-gold);
+            border-radius: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-switch:checked {
+            background-color: var(--color-accent-gold);
+        }
+
+        .toggle-switch::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+            background-color: #FFFFFF;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch:checked::before {
+            transform: translateX(20px);
+        }
+
+        /* Webcam specific styles */
+        .webcam-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+        .webcam-section video {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            background-color: #000;
+            border-radius: 10px;
+            display: block;
+            transform-origin: center center;
+        }
+        .webcam-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+        .webcam-controls button {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            background-color: var(--color-accent-gold);
+            color: white;
+            min-width: 100px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif; /* Applied Inter font */
+        }
+        .webcam-controls button:hover {
+            background-color: var(--color-dark-brown);
+            transform: translateY(-1px);
+        }
+        .webcam-controls button:disabled {
+            background-color: var(--color-light-gold);
+            color: var(--color-accent-gold);
+            cursor: not-allowed;
+            transform: none;
+        }
+        #hiddenCanvas {
+            display: none;
+        }
+
+        /* Generic Popup styles */
+        .popup-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .popup-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .popup-content {
+            background-color: #FFFFFF;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        .popup-modal.show .popup-content {
+            transform: translateY(0);
+        }
+        .popup-close {
+            position: absolute;
+            top: 12px;
+            right: 15px;
+            font-size: 1.6em;
+            cursor: pointer;
+            color: var(--color-light-gold);
+            transition: color 0.2s ease;
+        }
+        .popup-close:hover {
+            color: var(--color-accent-gold);
+        }
+        .popup-text {
+            color: var(--color-primary-text);
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+        .popup-countdown {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: var(--color-accent-gold);
+            margin-top: 15px;
+        }
+        .popup-caption-box {
+            width: 100%;
+            height: 80px;
+            border: 1px solid var(--color-light-gold);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 15px;
+            resize: vertical;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.9em;
+            color: var(--color-primary-text);
+            background-color: #FFFBF0;
+        }
+        .popup-copy-button {
+            background-color: var(--color-accent-gold);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-weight: 600;
+            border: none;
+            margin-top: 15px;
+            font-family: 'Inter', sans-serif; /* Applied Inter font */
+        }
+        .popup-copy-button:hover {
+            background-color: var(--color-dark-brown);
+        }
+        /* Specific styles for text elements to use Inter font */
+        .canvas-preview-container label,
+        .canvas-preview-container p,
+        .slider-group select { /* Added select to apply Inter font to dropdown */
+            font-family: 'Inter', sans-serif;
+        }
+        /* Remove margin-top for specific action buttons */
+        #finalizePictureBtn,
+        #downloadBtn {
+            margin-top: 0; /* Remove default margin-top */
+        }
+        /* Add a gap between the two buttons */
+        #finalizePictureBtn + #downloadBtn {
+            margin-top: 10px; /* Add a gap between finalize and download buttons */
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1 class="text-3xl font-bold" style="color: var(--color-primary-text);">Secret Garden Frame Adder</h1>
 
-  <!-- Splash Screen -->
-  <div id="splashScreen">
-    <div class="splash-bg-image"></div> <!-- This will fade in -->
-    <div class="splash-content-wrapper"> <!-- New wrapper for logo, text, button -->
-        <img id="splashLogo" src="Logo.png" alt="Bloom Beyond Logo" loading="lazy" decoding="async"> <!-- Changed to local path -->
-        <button id="takeTestBtn">TAKE THE TEST</button>
+        <div class="input-group">
+            <label for="imageUploadTrigger">Add Photo to Frame:</label>
+            <div id="imageUploadTrigger" class="file-input-wrapper">
+                <i class="fas fa-upload"></i>
+                <span>Choose Photo</span>
+            </div>
+            <!-- Hidden file input for gallery selection -->
+            <input type="file" id="selectGalleryInput" accept="image/*" style="display: none;">
+        </div>
+
+        <div class="main-content-area">
+            <!-- New container for canvas and preview message -->
+            <div class="canvas-preview-container">
+                <canvas id="imageCanvas"></canvas>
+                <!-- Facebook Profile View Switch - Moved here -->
+                <div class="flex items-center justify-center mt-4 mb-2">
+                    <label for="facebookProfileSwitch" class="font-semibold mr-3" style="color: var(--color-primary-text);">Facebook Profile View:</label>
+                    <input type="checkbox" id="facebookProfileSwitch" class="toggle-switch">
+                </div>
+                <p class="text-center text-gray-600 text-sm mt-4">
+                    This is a preview of your framed picture. For the highest quality, please download the final image.
+                </p>
+            </div>
+
+            <div class="right-sidebar">
+                <!-- Grouping Control Buttons -->
+                <div class="control-group">
+                    <h3 class="text-xl font-bold mb-2" style="color: var(--color-primary-text);">Scale and Position</h3>
+                    <div class="control-buttons">
+                        <button id="zoomInBtn" disabled aria-label="Zoom In"><i class="fas fa-search-plus"></i></button>
+                        <button id="zoomOutBtn" disabled aria-label="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                    </div>
+                    <div class="control-buttons">
+                        <button id="rotateLeftBtn" disabled aria-label="Rotate Left"><i class="fas fa-undo"></i></button>
+                        <button id="rotateRightBtn" disabled aria-label="Rotate Right"><i class="fas fa-redo"></i></button>
+                    </div>
+                    <div class="control-buttons">
+                        <button id="flipHorizontalBtn" disabled aria-label="Flip Horizontal"><i class="fas fa-arrows-alt-h"></i></button>
+                        <button id="flipVerticalBtn" disabled aria-label="Flip Vertical"><i class="fas fa-arrows-alt-v"></i></button>
+                    </div>
+                    <button id="revertPhotoBtn" class="action-button mt-4 text-button" disabled>RESET</button>
+                </div>
+
+                <!-- New container for Filter Controls -->
+                <div class="control-group mt-6">
+                    <h3 class="text-xl font-bold mb-2" style="color: var(--color-primary-text);">Image Adjustments</h3>
+                    <div class="slider-group">
+                        <label for="filterSelect">Select Adjustment:</label>
+                        <select id="filterSelect" class="w-full p-2 border rounded-lg mb-4" style="background-color: #FFFDE7; color: var(--color-primary-text); border-color: var(--color-light-gold);" disabled>
+                            <option value="brightness">Brightness</option>
+                            <option value="contrast">Contrast</option>
+                            <option value="saturation">Saturation</option>
+                        </select>
+
+                        <label for="filterSlider"><span id="filterLabel">Brightness</span>: <span id="filterValue">100%</span></label>
+                        <input type="range" id="filterSlider" min="0" max="200" value="100" disabled>
+                    </div>
+                    <button id="revertFiltersBtn" class="action-button mt-4 text-button" disabled>RESET</button>
+                </div>
+            </div>
+        </div>
+
+        <button id="finalizePictureBtn" class="action-button text-button" disabled>
+            Finalize Picture
+        </button>
+        <button id="downloadBtn" class="action-button text-button" disabled>
+            Download Framed Picture
+        </button>
+
+        <!-- Hidden image element for the frame -->
+        <!-- IMPORTANT: For the frame to be HD, 'Frame.png' must be a high-resolution image file. -->
+        <!-- This image is used internally by JavaScript to draw the frame onto the canvas. -->
+        <!-- It is set to display: none; in CSS and should not be visible on the page directly. -->
+        <img id="frameImage" src="Frame.png" alt="Secret Garden Frame" style="display: none;">
+        <!-- New hidden image element for Facebook View overlay -->
+        <img id="facebookViewImage" src="Facebook_View.png" alt="Facebook View Overlay" style="display: none;">
     </div>
-  </div>
 
-  <div class="header-content">
-    <!-- Removed butterfly GIF from here -->
-    <img class="header-logo" src="Logo.png" alt="Bloom Beyond Logo" decoding="async"> <!-- Changed to local path -->
-  </div>
+    <!-- Photo Source Modal -->
+    <div id="photoSourceModal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="modal-close">&times;</span>
+            <h2 class="text-2xl font-bold" style="color: var(--color-primary-text);">Choose Photo Source</h2>
 
-  <div class="quiz-container">
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBar"></div>
+            <button id="showWebcamOptionsBtn" class="modal-button mb-4">
+                <i class="fas fa-camera"></i>
+                Take a Picture
+            </button>
+            <button id="selectGalleryBtn" class="modal-button">
+                <i class="fas fa-images"></i>
+                Select from Gallery
+            </button>
+
+            <!-- Webcam Options Section (initially hidden) -->
+            <div id="webcamOptionsSection" class="webcam-section mt-6 hidden">
+                <h3 class="text-xl font-bold" style="color: var(--color-primary-text);">Camera Controls</h3>
+                <div style="position: relative; width: 100%; max-width: 320px;">
+                    <video id="webcamVideo" muted autoplay="autoplay" playsinline="playsinline" webkit-playsinline></video>
+                </div>
+                <div class="webcam-controls">
+                    <button id="captureWebcamPhotoBtn" disabled><i class="fas fa-camera-retro"></i> Capture</button>
+                    <button id="flipWebcamCaptureBtn" disabled><i class="fas fa-arrows-rotate"></i> Flip Image</button>
+                    <button id="flipCameraButton" disabled><i class="fas fa-sync-alt"></i> Flip Camera</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <form id="quizForm">
-      <div id="questionsContainer" class="question-wrapper"></div>
-      <div class="navigation-buttons">
-        <button type="button" id="prevBtn" disabled>&#x2190;</button> <!-- Left arrow -->
-        <button type="button" id="nextBtn">&#x2192;</button> <!-- Right arrow -->
-      </div>
-    </form>
-  </div>
-
-  <div id="result"></div>
-
-  <!-- Consolidated Action Buttons Container -->
-  <div id="actionButtons">
-    <button id="downloadResultBtn">DOWNLOAD PNG RESULT</button>
-  </div>
-
-  <!-- Loading Overlay with Key -->
-  <div id="loadingOverlay">
-    <div class="loading-bar-container">
-      <div id="loadingBarInner"></div>
-      <img id="loadingKey" src="Key.png" alt="Golden Key" decoding="async"> <!-- Changed to local path -->
+    <!-- Generic Popup Modal -->
+    <div id="genericPopupModal" class="popup-modal">
+        <div class="popup-content">
+            <span id="popupCloseBtn" class="popup-close">&times;</span>
+            <p id="popupMessage" class="popup-text"></p>
+            <div id="popupCountdown" class="popup-countdown"></div>
+            <textarea id="popupCaptionBox" class="popup-caption-box hidden" readonly></textarea>
+            <button id="popupCopyButton" class="popup-copy-button hidden">Copy to Clipboard</button>
+        </div>
     </div>
-    <div id="loadingText">Unlocking the Garden's Secret<span class="dot-wave">.</span><span class="dot-wave">.</span><span class="dot-wave">...</span></div>
-  </div>
 
-  <!-- Download Options Modal -->
-  <div id="downloadOptionsModal" class="modal-overlay">
-    <div class="modal-content">
-      <button class="close-modal-btn" id="downloadOptionsModalCloseBtn">&times;</button> <!-- New close button -->
-      <h3>Choose Download Mode</h3>
-      <p>Select whether you would like to download your result in light or dark mode.</p>
-      <div class="modal-buttons">
-        <button id="downloadLightModeBtn">DOWNLOAD IN LIGHT MODE</button>
-        <button id="downloadDarkModeBtn">DOWNLOAD IN DARK MODE</button>
-      </div>
-    </div>
-  </div>
+    <!-- Hidden canvas for capturing webcam frames -->
+    <canvas id="hiddenCanvas"></canvas>
 
-  <!-- Instagram Follow Modal -->
-  <div id="instagramFollowModal" class="modal-overlay">
-    <div class="modal-content">
-      <button class="close-modal-btn" id="instagramModalCloseBtn">&times;</button> <!-- Existing close button -->
-      <img src="butterfly.gif" alt="Butterfly" class="modal-butterfly-gif"> <!-- Added butterfly GIF here -->
-      <h3>Grateful you stepped into the garden and found your spirit within!</h3>
-      <div class="divider"></div> <!-- New divider -->
-      <!-- Removed QR code image -->
-      <p class="keep-magic-text">🌼 Keep the Magic Going:</p>
-      <ul class="magic-list">
-        <li>Follow us on Instagram <a href="https://www.instagram.com/uplbcafsfc?igsh=anh3dmUxN3Rzb3hy" target="_blank" rel="noopener noreferrer">@uplbcafsfc</a></li>
-        <li>Join the Tap-In and grow with us</li>
-        <li>Tag us when you post your results — we’d love to see them!</li>
-      </ul>
-      <div class="modal-buttons">
-        <button id="retakeTestBtn" style="display: none;">RETAKE THE TEST</button> <!-- Changed button text and added inline style for initial hiding -->
-      </div>
-    </div>
-  </div>
+    <script>
+        // DOM Elements
+        const imageUploadTrigger = document.getElementById('imageUploadTrigger');
+        const selectGalleryInput = document.getElementById('selectGalleryInput');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const finalizePictureBtn = document.getElementById('finalizePictureBtn');
+        const frameImage = document.getElementById('frameImage');
+        const facebookViewImage = document.getElementById('facebookViewImage'); // New: Facebook View Image
+        const ctx = imageCanvas.getContext('2d');
 
-  <!-- Custom Alert/Message Box -->
-  <div id="customMessageBox" class="modal-overlay">
-    <div class="modal-content">
-      <p id="messageBoxText"></p>
-      <button id="messageBoxCloseBtn">OK</button>
-    </div>
-  </div>
+        const photoSourceModal = document.getElementById('photoSourceModal');
+        const closeModal = document.getElementById('closeModal');
+        const showWebcamOptionsBtn = document.getElementById('showWebcamOptionsBtn');
+        const selectGalleryBtn = document.getElementById('selectGalleryBtn');
+        const webcamOptionsSection = document.getElementById('webcamOptionsSection');
 
-  <!-- Temporary container for generating individual plant images (kept for potential future use or if user changes mind) -->
-  <!-- This container is no longer used for image generation but the styling is kept for reference -->
-  <div id="tempResultContainer" style="position: absolute; left: -9999px; top: -9999px; width: 700px; padding: 3rem; background: var(--soft-cream); border-radius: 2rem; border: 2px dashed var(--light-gold); text-align: center; box-shadow: 0 12px 35px var(--shadow-color); opacity: 1; visibility: hidden;">
-    <img id="tempResultImage" src="" alt="" loading="lazy" decoding="async" style="max-width: 300px; height: auto; border-radius: 1.2rem; margin: 0 auto 0; display: block; border: none; box-shadow: none;" />
-    <h2 id="tempPlantName" style="font-family: 'Playfair Display', serif; color: var(--primary-gold); font-size: 3rem; margin-top: 0; margin-bottom: 0; letter-spacing: 0.03em;"></h2>
-    <p id="tempScientificName" style="font-style: italic; color: var(--text-light); font-size: 1rem; margin-top: 0.2rem; margin-bottom: 1rem;"></p>
-    <p id="tempCategory" style="font-weight: bold; color: var(--primary-gold); margin-top: 1.5rem; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;"></p>
-    <div class="divider" style="border-top: 1px dashed var(--light-gold); margin: 2rem auto; width: 95%;"></div>
-    <p id="tempDescriptionTitle" style="font-weight: bold; color: var(--primary-gold); margin-top: 1.5rem; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;"></p>
-    <p id="tempDetails" style="font-size: 1.15rem; line-height: 1.8; margin-bottom: 0.8rem; color: var(--text-light); text-align: justify;"></p>
-    <p id="tempQuote" style="font-family: 'Playfair Display', serif; font-style: italic; color: var(--primary-gold); margin-top: 2rem; font-size: 1.25rem; padding: 1rem 1.5rem; background-color: #FFFDE7; border-left: 5px solid var(--light-gold); border-radius: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></p>
-  </div>
+        const webcamVideo = document.getElementById("webcamVideo");
+        const captureWebcamPhotoBtn = document.getElementById("captureWebcamPhotoBtn");
+        const hiddenCanvas = document.getElementById("hiddenCanvas");
+
+        const flipWebcamCaptureBtn = document.getElementById('flipWebcamCaptureBtn');
+        const flipCameraButton = document.getElementById('flipCameraButton');
+
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const rotateLeftBtn = document.getElementById('rotateLeftBtn');
+        const rotateRightBtn = document.getElementById('rotateRightBtn');
+        const flipHorizontalBtn = document.getElementById('flipHorizontalBtn');
+        const flipVerticalBtn = document.getElementById('flipVerticalBtn');
+        const revertPhotoBtn = document.getElementById('revertPhotoBtn');
+        const revertFiltersBtn = document.getElementById('revertFiltersBtn');
+
+        // Filter controls
+        const filterSelect = document.getElementById('filterSelect');
+        const filterSlider = document.getElementById('filterSlider');
+        const filterLabel = document.getElementById('filterLabel');
+        const filterValue = document.getElementById('filterValue');
+
+        // Generic Popup Elements
+        const genericPopupModal = document.getElementById('genericPopupModal');
+        const popupCloseBtn = document.getElementById('popupCloseBtn');
+        const popupMessage = document.getElementById('popupMessage');
+        const popupCountdown = document.getElementById('popupCountdown');
+        const popupCaptionBox = document.getElementById('popupCaptionBox');
+        const popupCopyButton = document.getElementById('popupCopyButton');
+
+        // New Facebook Profile View elements
+        const facebookProfileSwitch = document.getElementById('facebookProfileSwitch');
 
 
-  <script>
-    const originalQuestions = [
-      {
-        q: "What do others usually call you?",
-        options: [
-          { text: "The Mom Friend – Always checking if everyone ate, brought water, and is okay.", plant: "Sweet Potato" },
-          { text: "The Brain – You always know a random fact or have a plan for everything.", plant: "Cauliflower" },
-          { text: "The Hype Machine – You cheer people on like it’s your job.", plant: "Corn" },
-          { text: "The Chill One – You’re just vibing and keeping everyone calm.", plant: "Paragrass" },
-        ]
-      },
-      {
-        q: "What's your go-to meal?",
-        options: [
-          { text: "Anything warm and hearty like sinigang or adobo – comforting and classic", plant: "Sweet Potato" },
-          { text: "Bento box or anything aesthetic and organized – like your vibe", plant: "Cauliflower" },
-          { text: "Fast food combo with fries and extra sauce – because you’re always on the go", plant: "Corn" },
-          { text: "Something refreshing or light like fruit bowls or iced drinks – chill and cool", plant: "Paragrass" },
-        ]
-      },
-      {
-        q: "How do you usually start your day?",
-        options: [
-          { text: "Up early and ready to tackle tasks – checklist, outfit, hydration: check!", plant: "Corn" },
-          { text: "Slowly with music or journaling – easing in with your own rhythm", plant: "Pitaya" },
-          { text: "I hit snooze... a lot – mornings are tough, let’s be real.", plant: "Peanut" },
-          { text: "Scrolling social media or messaging friends – you need your fix.", plant: "Mussaenda" },
-        ]
-      },
-      {
-        q: "When working with a group, you’re the one who...",
-        options: [
-          { text: "Does the outline and double-checks everything – organization king/queen.", plant: "Cauliflower" },
-          { text: "Handles design, visuals, or anything creative – your brain is a Pinterest board.", plant: "Patchouli" },
-          { text: "Presents the output or hypes the team – no fear, just flair.", plant: "Corn" },
-          { text: "Provides snacks, vibes, or emotional support – the soft one.", plant: "Sweet Potato" },
-        ]
-      },
-      {
-        q: "Which place feels most like home to you?",
-        options: [
-          { text: "My room – it’s my sanctuary.", plant: "Peanut" },
-          { text: "Anywhere quiet and surrounded by nature.", plant: "Paragrass" },
-          { text: "A lively café or busy street.", plant: "Cotton" },
-          { text: "Wherever my friends are – even a random sari-sari store.", plant: "Corn" },
-        ]
-      },
-      {
-        q: "Pick a hobby you vibe with most:",
-        options: [
-          { text: "Writing poetry, journaling, or introspection.", plant: "Patchouli" },
-          { text: "Gaming or watching long YouTube videos.", plant: "Peanut" },
-          { text: "Trying new aesthetic drinks or café-hopping.", plant: "Mussaenda" },
-          { text: "Organizing events, clubs, or group hangouts.", plant: "Sugarcane" },
-        ]
-      },
-      {
-        q: "What’s your dream future like?",
-        options: [
-          { text: "Peaceful, slow, and grounded – somewhere calm.", plant: "Paragrass" },
-          { text: "Making an impact, influencing others, maybe even fame.", plant: "Cotton" },
-          { text: "Living sustainably and close to nature.", plant: "Patchouli" },
-          { text: "Changing the world with innovation or leadership.", plant: "Cauliflower" },
-        ]
-      },
-      {
-        q: "Your energy in a 'barkada' group chat:",
-        options: [
-          { text: "Spam memes and make everyone laugh.", plant: "Corn" },
-          { text: "Send deep late-night thoughts or voice notes.", plant: "Patchouli" },
-          { text: "Remind people of deadlines and who’s bringing what.", plant: "Cauliflower" },
-          { text: "React to messages but rarely start conversations.", plant: "Peanut" },
-        ]
-      },
-      {
-        q: "You’re given ₱500 and a free afternoon. What do you do?",
-        options: [
-          { text: "Buy snacks for the group or treat a friend.", plant: "Sweet Potato" },
-          { text: "Thrift or look for unique finds.", plant: "Mussaenda" },
-          { text: "Spend it on milk tea, halo-halo, or anything cold.", plant: "Pitaya" },
-          { text: "Save or invest it – practical first.", plant: "Sugarcane" },
-        ]
-      },
-      {
-        q: "Choose a vibe aesthetic:",
-        options: [
-          { text: "Soft, earthy tones, candles, lo-fi music.", plant: "Paragrass" },
-          { text: "Retro Y2K, maximalist, experimental.", plant: "Pitaya" },
-          { text: "Clean girl / minimalist / neutral feeds.", plant: "Cauliflower" },
-          { text: "Bright, chaotic, anything goes.", plant: "Cotton" },
-        ]
-      },
-      {
-        q: "You’re feeling overwhelmed. What helps most?",
-        options: [
-          { text: "Cuddling a pet or crying it out alone.", plant: "Sweet Potato" },
-          { text: "Loud music and dancing like no one’s watching.", plant: "Corn" },
-          { text: "Writing down what I feel or venting to someone.", plant: "Patchouli" },
-          { text: "Escaping through a game, video, or nap.", plant: "Peanut" },
-        ]
-      },
-      {
-        q: "Pick the best quote that speaks to you:",
-        options: [
-          { text: "“Grow slow, bloom loud.” – you do not rush your process.", plant: "Mussaenda" },
-          { text: "“I’m built for the sun.” – you are born to shine.", plant: "Sugarcane" },
-          { text: "“Bend, don’t break.” – you are gentle but strong.", plant: "Paragrass" },
-          { text: "“If no one claps, clap for yourself.” – main character energy.", plant: "Cotton" },
-        ]
-      }
-    ];
+        // Global Variables
+        let userImage = new Image();
+        // userImage.src will be set in window.onload based on local storage or default placeholder
 
-    const plantDescriptions = {
-      Corn: {
-        scientific: "Zea mays",
-        category: "Cereal",
-        descriptionTitle: "The Adaptive Visionary",
-        details: "Corn is grown nearly everywhere—from lowlands to uplands—just like you thrive in any environment. You are resilient, resourceful, and adaptable, able to take the lead in complex situations. Corn supports countless industries, which mirrors your versatility—you are the kind of person who wears many hats and performs them all well. You value progress and nourishment, not just for yourself but for those around you.",
-        quote: "Like corn, you are deeply rooted in purpose, yet always reaching higher.",
-        image: "Corn.png" /* This image is for display on the result page */
-      },
-      "Sweet Potato": {
-        scientific: "Ipomoea batatas",
-        category: "Root Crop",
-        descriptionTitle: "The Grounded Caregiver",
-        details: "Sweet potato grows beneath the surface, storing energy and nutrients in silence. You are humble, nurturing, and self-sustaining—people rely on you for comfort and strength. You may not seek attention, but your quiet presence makes a lasting impact. Just as 'kamote' can regrow from even small cuttings, you are the embodiment of resilience and rebirth.",
-        quote: "You give from the roots—steady, soft, and nourishing to the soul.",
-        image: "Sweet_Potato.png" /* This image is for display on the result page */
-      },
-      Mussaenda: {
-        scientific: "Mussaenda philippica",
-        category: "Ornamental",
-        descriptionTitle: "The Dazzling Spirit",
-        details: "Mussaenda dazzles with its colorful, petal-like bracts. You are expressive, artistic, and emotionally attuned. You uplift your surroundings simply by being present. Like this ornamental plant, often used in public gardens, your charm draws people in—but beneath the beauty is a deep sense of sensitivity and meaning. You remind people to find wonder in the everyday.",
-        quote: "Like Mussaenda, you beautify effortlessly. You are presence made petals.",
-        image: "Mussaenda.png" /* This image is for display on the result page */
-      },
-      Peanut: {
-        scientific: "Arachis hypogaea",
-        category: "Legume",
-        descriptionTitle: "The Steady Steward",
-        details: "Peanuts grow underground while quietly enriching the soil through nitrogen fixation. You are modest yet essential, the type who supports others from behind the scenes. You are practical, grounded, and naturally beneficial to your community. Like peanuts used in diverse Filipino dishes, your strength lies in fitting in wherever needed, yet always improving the situation.",
-        quote: "You may grow low, but you lift others high.",
-        image: "Peanut.png" /* This image is for display on the result page */
-      },
-      Pitaya: {
-        scientific: "Selenicereus undatus",
-        category: "Pomological Crop (Fruit)",
-        descriptionTitle: "The Bold Trailblazer",
-        details: "Pitaya thrives under full sun and blooms at night—proof that beauty and productivity do not follow conventional rules. You are original, unconventional, and vibrant, often standing out in a crowd. Like the plant that clings to trellises, you climb high through effort and ingenuity. You are full of surprises, both inside and out.",
-        quote: "You do not just grow—you glow after dark.",
-        image: "Pitaya.png" /* This image is for display on the result page */
-      },
-      Patchouli: {
-        scientific: "Pogostemon cablin",
-        category: "Plantation Crop",
-        descriptionTitle: "The Scent of Serenity",
-        details: "Patchouli is valued for its calming fragrance and is used in oils and perfumes. You are soothing, wise, and reflective. You prefer deep conversations over small talk, and solitude recharges you. You may not speak often, but when you do, people listen. Like its essential oil, a little of your presence leaves a lasting impression.",
-        quote: "Still waters run deep—and you are the calm before and after every storm.",
-        image: "Patchouli.png" /* This image is for display on the result page */
-      },
-      Cauliflower: {
-        scientific: "Brassica oleracea var. botrytis",
-        category: "Olericultural Crop (Vegetable)",
-        descriptionTitle: "The Quiet Strategist",
-        details: "Cauliflower thrives in cool environments and requires precise timing. You are analytical, composed, and deliberate—you plan things through and do not act rashly. Just as cauliflower’s curds are tightly packed, your thoughts are structured and organized. You are proof that brilliance often grows in the background.",
-        quote: "Not all who are quiet lack depth—some are just preparing to flourish.",
-        image: "Cauliflower.png" /* This image is for display on the result page */
-      },
-      Sugarcane: {
-        scientific: "Saccharum officinarum",
-        category: "Industrial Crop",
-        descriptionTitle: "The Tireless Contributor",
-        details: "Sugarcane grows tall and dense, producing fuel, sugar, and even paper. You are a productive powerhouse, someone who can keep giving without burning out. People admire your endurance, generosity, and reliability. You are the type who can sweeten lives even during hard harvest seasons.",
-        quote: "Even under the heat, you keep growing—and giving.",
-        image: "Sugarcane.png" /* This image is for display on the result page */
-      },
-      Cotton: {
-        scientific: "Gossypium hirsutum",
-        category: "Fiber Crop",
-        descriptionTitle: "The Gentle Resilient",
-        details: "Cotton is soft but labor-intensive to grow. You are gentle, patient, and emotionally intelligent. Like cotton, you are flexible yet strong when stretched. People find comfort in your presence, and your strength often shows in times of hardship. You make warmth tangible, just by being you.",
-        quote: "You are proof that softness and strength can grow from the same stem.",
-        image: "Cotton.png" /* This image is for display on the result page */
-      },
-      Paragrass: {
-        scientific: "Urochloa mutica",
-        category: "Grass Forage",
-        descriptionTitle: "The Groundcover Guardian",
-        details: "Paragrass spreads rapidly, controlling erosion and providing forage. You are supportive, adaptable, and community-driven. While you may not seek center stage, you hold people together. Like a true ecosystem enabler, your presence stabilizes and uplifts. You don’t grow for praise—you grow so others can thrive.",
-        quote: "You’re the calm beneath the chaos.",
-        image: "Paragrass.png" /* This image is for display on the result page */
-      }
-    };
+        let originalImageState = { // Store original state for revert
+            x: 0,
+            y: 0,
+            scale: 1,
+            rotation: 0,
+            flipH: 1,
+            flipV: 1
+        };
 
-    let shuffledQuestions = [];
-    let currentQuestionIndex = 0;
-    const userAnswers = {}; // Stores selected plant for each question index
+        let frameLoaded = false;
+        let placeholderLoaded = false;
+        let facebookViewImageLoaded = false; // New: Flag for Facebook View image
+        let currentImageSource = 'placeholder'; // 'placeholder', 'uploaded', 'webcam', 'finalized'
+        let scaleFactor = 1;
+        let imageX = 0;
+        let imageY = 0;
+        let rotationAngle = 0;
+        let flipH = 1;
+        let flipV = 1;
 
-    const questionsContainer = document.getElementById('questionsContainer');
-    const progressBar = document.getElementById('progressBar');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    // Removed submitQuizBtn as it's no longer a separate button
+        let brightness = 100;
+        let contrast = 100;
+        let saturation = 100;
 
-    const quizForm = document.getElementById('quizForm');
-    const resultDiv = document.getElementById('result');
-    const actionButtonsContainer = document.getElementById('actionButtons'); // Get the new container for action buttons
+        let initialPinchDistance = 0;
+        let initialScaleFactorOnPinch = 1;
+        let isPinching = false;
 
-    // New splash screen elements
-    const splashScreen = document.getElementById('splashScreen');
-    const splashLogo = document.getElementById('splashLogo'); // Get splash logo element
-    const takeTestBtn = document.getElementById('takeTestBtn');
-    const headerContent = document.querySelector('.header-content');
-    const headerLogo = document.querySelector('.header-logo'); // The actual header logo element
+        let isDragging = false;
+        let lastX = 0;
+        let lastY = 0;
 
-    // Loading overlay elements
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const loadingBarInner = document.getElementById('loadingBarInner');
-    const loadingKey = document.getElementById('loadingKey');
+        let showGrid = false;
+        let gridTimer = null;
 
-    // Moved these declarations to a higher scope so they are accessible globally
-    const quizContainer = document.querySelector('.quiz-container');
-    const actionButtonsContainerElem = document.getElementById('actionButtons');
+        let frameOpacity = 1;
+        let targetFrameOpacity = 1;
+        let animationFrameId = null;
 
-    // Modal elements
-    const downloadOptionsModal = document.getElementById('downloadOptionsModal');
-    const downloadLightModeBtn = document.getElementById('downloadLightModeBtn');
-    const downloadDarkModeBtn = document.getElementById('downloadDarkModeBtn');
-    const downloadOptionsModalCloseBtn = document.getElementById('downloadOptionsModalCloseBtn'); // New close button for download modal
+        let imageCapture;
+        let localStream; // Stores the MediaStream object for the webcam
+        let cameraDevices = []; // Stores available camera devices
+        let webcamCurrentFacingMode = 'user'; // 'user' for front camera, 'environment' for rear
 
-    // Instagram Follow Modal elements
-    const instagramFollowModal = document.getElementById('instagramFollowModal');
-    const instagramModalCloseBtn = document.getElementById('instagramModalCloseBtn'); // Get the new close button
-    const retakeTestBtn = document.getElementById('retakeTestBtn'); // Renamed from instagramBringMeThereBtn
+        // Added for camera permission persistence
+        const CAMERA_PERMISSION_KEY = 'cameraPermissionStatus';
+        let cameraPermissionStatus = localStorage.getItem(CAMERA_PERMISSION_KEY); // 'granted', 'denied', or null
 
-    // Custom Message Box elements
-    const customMessageBox = document.getElementById('customMessageBox');
-    const messageBoxText = document.getElementById('messageBoxText');
-    const messageBoxCloseBtn = document.getElementById('messageBoxCloseBtn');
+        let webcamPreviewFlip = 1; // 1 for no flip, -1 for horizontal flip on webcam preview
 
+        let isFacebookProfileMode = false; // New global variable for the Facebook profile view
+        let circleOverlayOpacity = 0; // New global variable for the black overlay opacity
+        let targetCircleOverlayOpacity = 0; // New global variable for the target black overlay opacity
 
-    // Function to show custom message box
-    function showMessageBox(message) {
-      messageBoxText.textContent = message;
-      customMessageBox.classList.add('active');
-    }
+        // Hardcoded data from Database.txt
+        const eventTargetDate = new Date("July 26, 2025 19:00:00").getTime(); // July 26, 2025 | 7:00 PM
+        const enableDownload = true; // Changed to true to enable download
+        const eventCaptionText = "Hello this is a trial only. Copy me. Lorem ipsum dolor"; // Hello this is a trial only. Copy me. Lorem ipsum dolor
 
-    // Function to hide custom message box
-    function hideMessageBox() {
-      customMessageBox.classList.remove('active');
-    }
+        let countdownIntervalId; // To store the interval for the countdown
 
+        // --- Utility Functions ---
 
-    // Function to show Instagram follow modal (now also handles retake button visibility)
-    function showInstagramFollowModal() {
-      instagramFollowModal.classList.add('active');
-      // Hide the retake button initially and then show it after a delay
-      retakeTestBtn.style.opacity = '0';
-      retakeTestBtn.style.display = 'block'; // Ensure it's block so opacity transition works
-      setTimeout(() => {
-        retakeTestBtn.style.opacity = '1';
-      }, 5000); // 5-second delay
-    }
+        // Function to show a generic message box (replaces multiple inline message box creations)
+        function showMessageBox(message, isError = false) {
+            const messageBox = document.createElement('div');
+            messageBox.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                z-index: 1000; text-align: center; font-family: 'Playfair Display', serif;
+                color: ${isError ? 'var(--color-accent-gold)' : '#333'}; /* Using CSS variable for error color */
+                max-width: 350px; width: 90%;
+            `;
+            messageBox.innerHTML = `
+                <p class="mb-4">${message}</p>
+                <button id="closeMessageBox" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">OK</button>
+            `;
+            document.body.appendChild(messageBox);
+            document.getElementById('closeMessageBox').addEventListener('click', () => {
+                document.body.removeChild(messageBox);
+            });
+        }
 
-    // Function to hide Instagram follow modal
-    function hideInstagramFollowModal() {
-      instagramFollowModal.classList.remove('active');
-      retakeTestBtn.style.display = 'none'; // Hide the button when modal is closed
-    }
+        // Function to show a generic popup message
+        function showPopup(message, showCountdown = false, showCaptionBox = false, caption = '', targetDateForCountdown = null) {
+            popupMessage.textContent = message;
+            popupCountdown.style.display = showCountdown ? 'block' : 'none';
+            popupCaptionBox.style.display = showCaptionBox ? 'block' : 'none';
+            popupCopyButton.style.display = showCaptionBox ? 'block' : 'none';
 
-
-    // Function to shuffle an array
-    function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
-      }
-      return array;
-    }
-
-    // Function to initialize the quiz
-    function initializeQuiz() {
-      shuffledQuestions = shuffleArray([...originalQuestions]); // Shuffle a copy of original questions
-      questionsContainer.innerHTML = ''; // Clear existing questions
-
-      shuffledQuestions.forEach((question, index) => {
-        const div = document.createElement('div');
-        div.className = 'question';
-        div.setAttribute('data-question-index', index); // Store original index for answer tracking
-        div.innerHTML = `
-          <h3>${index + 1}. ${question.q}</h3>
-          <div class="options">
-            ${question.options.map((opt, i) => `
-              <input type="radio" name="q${index}" id="q${index}opt${i}" value="${opt.plant}">
-              <label for="q${index}opt${i}">${opt.text}</label>
-            `).join('')}
-          </div>
-        `;
-        questionsContainer.appendChild(div);
-
-        // Add event listener for radio button changes
-        div.querySelectorAll('input[type="radio"]').forEach(radio => {
-          radio.addEventListener('change', (event) => {
-            userAnswers[index] = event.target.value; // Store the chosen plant for this question
-            updateNavigationButtons(); // Update button state after an answer is selected
-
-            // Automatically move to the next question if an option is selected and it is not the last question
-            if (currentQuestionIndex < shuffledQuestions.length - 1) {
-                nextBtn.click(); // Programmatically click the next button
+            if (showCaptionBox) {
+                popupCaptionBox.value = caption;
             }
-          });
+
+            if (showCountdown && targetDateForCountdown) {
+                // Clear any existing countdown interval for this popup
+                if (countdownIntervalId) {
+                    clearInterval(countdownIntervalId);
+                }
+                // Start a new countdown specifically for the popup
+                countdownIntervalId = setInterval(() => {
+                    const now = new Date().getTime();
+                    const distance = targetDateForCountdown - now;
+
+                    if (distance < 0) {
+                        popupCountdown.textContent = "The event has commenced!";
+                        clearInterval(countdownIntervalId);
+                        return;
+                    }
+
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    popupCountdown.textContent = `Countdown: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+                }, 1000);
+            } else {
+                popupCountdown.textContent = ''; // Clear countdown text if not showing
+                if (countdownIntervalId) {
+                    clearInterval(countdownIntervalId); // Ensure interval is cleared
+                    countdownIntervalId = null;
+                }
+            }
+
+            genericPopupModal.classList.add('show');
+        }
+
+        // Function to hide the generic popup message
+        function hidePopup() {
+            genericPopupModal.classList.remove('show');
+            if (countdownIntervalId) {
+                clearInterval(countdownIntervalId);
+                countdownIntervalId = null;
+            }
+        }
+
+        // Function to show the photo source selection modal
+        function showPhotoSourceModal() {
+            photoSourceModal.classList.add('show');
+            webcamOptionsSection.classList.add('hidden'); // Hide webcam section initially
+            showWebcamOptionsBtn.style.display = 'block'; // Show webcam button
+            selectGalleryBtn.style.display = 'block'; // Show gallery button
+            stopWebcam(); // Always stop webcam when modal is opened to reset state
+            setWebcamControlButtonsState(false); // Disable webcam controls
+            webcamPreviewFlip = 1; // Reset live video flip for next camera session
+            applyWebcamTransforms(); // Clear any transforms on video element
+        }
+
+        // Function to hide the photo source selection modal
+        function hidePhotoSourceModal() {
+            photoSourceModal.classList.remove('show');
+            stopWebcam(); // Stop webcam when modal is closed
+        }
+
+        // Function to enable/disable control buttons for the main canvas image
+        function setControlButtonsState(enabled) {
+            zoomInBtn.disabled = !enabled;
+            zoomOutBtn.disabled = !enabled;
+            rotateLeftBtn.disabled = !enabled;
+            rotateRightBtn.disabled = !enabled;
+            flipHorizontalBtn.disabled = !enabled;
+            flipVerticalBtn.disabled = !enabled;
+            revertPhotoBtn.disabled = !enabled;
+
+            filterSelect.disabled = !enabled; // Enable/disable filter dropdown
+            filterSlider.disabled = !enabled; // Enable/disable filter slider
+            revertFiltersBtn.disabled = !enabled;
+
+            finalizePictureBtn.disabled = !enabled;
+            downloadBtn.disabled = !enabled;
+            facebookProfileSwitch.disabled = !enabled;
+        }
+
+        // Function to enable/disable control buttons for the webcam video
+        function setWebcamControlButtonsState(enabled) {
+            captureWebcamPhotoBtn.disabled = !enabled;
+            flipWebcamCaptureBtn.disabled = !enabled;
+            // Only enable flipCameraButton if multiple cameras are detected
+            flipCameraButton.disabled = !(enabled && cameraDevices.length > 1);
+        }
+
+        // --- Event Listeners ---
+        imageUploadTrigger.addEventListener('click', showPhotoSourceModal);
+        closeModal.addEventListener('click', hidePhotoSourceModal);
+        photoSourceModal.addEventListener('click', (e) => {
+            if (e.target === photoSourceModal) { // Close if clicked outside content
+                hidePhotoSourceModal();
+            }
         });
-      });
 
-      currentQuestionIndex = 0;
-      displayQuestion(currentQuestionIndex);
-      updateProgressBar();
-      updateNavigationButtons();
-    }
+        popupCloseBtn.addEventListener('click', hidePopup);
+        genericPopupModal.addEventListener('click', (e) => {
+            if (e.target === genericPopupModal) {
+                hidePopup();
+            }
+        });
 
-    // Function to display a specific question
-    function displayQuestion(index) {
-      const questions = document.querySelectorAll('.question');
-      questions.forEach((q, i) => {
-        q.classList.remove('active');
-        if (i === index) {
-          q.classList.add('active');
-          // Restore selected radio button if already answered
-          const selectedPlant = userAnswers[index];
-          if (selectedPlant) {
-            const radio = q.querySelector(`input[value="${selectedPlant}"]`);
-            if (radio) radio.checked = true;
-          }
-        }
-      });
-      updateProgressBar();
-      updateNavigationButtons();
-    }
-
-    // Function to update the progress bar
-    function updateProgressBar() {
-      const progress = ((currentQuestionIndex + 1) / shuffledQuestions.length) * 100;
-      progressBar.style.width = `${progress}%`;
-    }
-
-    // Function to update navigation button states
-    function updateNavigationButtons() {
-      prevBtn.disabled = currentQuestionIndex === 0;
-
-      // Next button is disabled if no answer is selected for the current question
-      nextBtn.disabled = !userAnswers.hasOwnProperty(currentQuestionIndex);
-
-      // The text content for next button remains an arrow, even on the last question
-      nextBtn.innerHTML = '&#x2192;';
-    }
-
-    // Event listeners for navigation
-    prevBtn.addEventListener('click', () => {
-      if (currentQuestionIndex > 0) {
-        currentQuestionIndex--;
-        displayQuestion(currentQuestionIndex);
-      }
-    });
-
-    nextBtn.addEventListener('click', () => {
-      if (currentQuestionIndex < shuffledQuestions.length - 1) {
-        // Only proceed if an answer is selected for the current question
-        if (userAnswers.hasOwnProperty(currentQuestionIndex)) {
-            currentQuestionIndex++;
-            displayQuestion(currentQuestionIndex);
-        }
-      } else {
-        // This is the last question, submit the quiz
-        quizForm.dispatchEvent(new Event('submit'));
-      }
-    });
-
-    // Function to directly download a pre-existing image file
-    async function downloadResultImage(topPlantName, buttonElement, mode) {
-      // Show loading spinner and disable button
-      buttonElement.innerHTML = 'Downloading <span class="spinner"></span>';
-      buttonElement.classList.add('loading-button');
-      buttonElement.disabled = true;
-
-      // Clean the plant name for filenames (e.g., "Sweet Potato" -> "Sweet_Potato")
-      const cleanedPlantName = topPlantName.replace(/\s/g, '_');
-
-      let imagePath;
-      let downloadFileName;
-
-      if (mode === 'light') {
-        imagePath = `L_${cleanedPlantName}.png`;
-        downloadFileName = `CAFSSecretGarden_${cleanedPlantName}_LMode.png`;
-      } else if (mode === 'dark') {
-        imagePath = `D_${cleanedPlantName}.png`;
-        downloadFileName = `CAFSSecretGarden_${cleanedPlantName}_DMode.png`;
-      } else {
-        // Fallback or error if mode is not recognized
-        console.error("Invalid download mode specified.");
-        showMessageBox("An error occurred during download. Please try again.");
-        return; // Exit function if mode is invalid
-      }
-
-      try {
-        const link = document.createElement('a');
-        link.href = imagePath; // Set href directly to the image file path
-        link.download = downloadFileName; // This will trigger a direct download
-        document.body.appendChild(link); // Append to body to ensure it's in the DOM for click
-        link.click(); // Programmatically click the link to trigger download
-        document.body.removeChild(link); // Clean up the element
-
-      } catch (error) {
-        console.error('Error downloading image:', error);
-        showMessageBox('Failed to download the result image. Please try again.');
-      } finally {
-        // Reset button state after download or error
-        buttonElement.innerHTML = (mode === 'dark' ? 'DOWNLOAD IN DARK MODE' : 'DOWNLOAD IN LIGHT MODE');
-        buttonElement.classList.remove('loading-button');
-        buttonElement.disabled = false;
-        hideDownloadOptionsModal(); // Hide the modal after download attempt
-        showInstagramFollowModal(); // Show the Instagram follow-up modal
-      }
-    }
-
-    // Function to show download options modal
-    function showDownloadOptionsModal() {
-      downloadOptionsModal.classList.add('active');
-    }
-
-    // Function to hide download options modal
-    function hideDownloadOptionsModal() {
-      downloadOptionsModal.classList.remove('active');
-    }
-
-
-    // Event listener for form submission
-    quizForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-
-      // Final check for the last question
-      if (Object.keys(userAnswers).length !== shuffledQuestions.length) { // Check if all questions are answered
-        showMessageBox("Please answer all questions before finding out your result!");
-        return;
-      }
-
-      const scores = {};
-      for (const index in userAnswers) {
-        const plant = userAnswers[index];
-        scores[plant] = (scores[plant] || 0) + 1;
-      }
-
-      let topPlant = null;
-      let maxScore = -1; // Initialize with -1 to ensure any score is higher
-
-      // Iterate through the scores to find the highest, prioritizing the first encountered in case of a tie
-      for (const plant in scores) {
-        if (scores[plant] > maxScore) {
-          maxScore = scores[plant];
-          topPlant = plant;
-        }
-      }
-
-      // Fallback if no plant is selected (should not happen with validation)
-      if (!topPlant && Object.keys(scores).length > 0) {
-          topPlant = Object.keys(scores)[0]; // Pick the first one if all scores are zero or tied at zero
-      } else if (!topPlant) {
-          topPlant = "Paragrass"; // Default to a neutral plant if somehow no answer is recorded
-      }
-
-      // Hide the quiz container
-      quizContainer.style.display = 'none';
-
-      // Show loading overlay and start animation
-      loadingOverlay.classList.add('active');
-      loadingBarInner.style.width = '100%'; // Start loading bar animation
-      // Reset loadingKey animation to ensure it starts from the beginning each time
-      loadingKey.style.animation = 'none';
-      void loadingKey.offsetWidth; // Trigger reflow to restart animation
-      loadingKey.style.animation = 'flyAcross 2.5s linear forwards'; /* Only horizontal movement */
-
-
-      // After loading animation, display result and action buttons
-      setTimeout(() => {
-        resultDiv.style.display = 'block';
-        actionButtonsContainer.style.display = 'flex'; // Show the action buttons container
-        loadingOverlay.classList.remove('active'); // Hide loading overlay
-        loadingBarInner.style.width = '0%'; // Reset loading bar for next time
-        loadingKey.style.animation = 'none'; // Stop loadingKey animation
-      }, 2500); // Match this duration to the loading bar animation duration (2.5s)
-
-      const resultPlant = plantDescriptions[topPlant];
-
-      resultDiv.innerHTML = `
-        <img id="resultImage" src="${resultPlant.image}" alt="${topPlant}" onerror="this.onerror=null;this.src='https://placehold.co/200x200/cccccc/333333?text=Image+Not+Found';" loading="lazy" decoding="async" />
-        <h2>${topPlant}</h2>
-        <p class="scientific-name"><em>${resultPlant.scientific}</em></p>
-        <p class="category">Category: ${resultPlant.category}</p>
-        <div class="divider"></div>
-        <p class="description-title">${resultPlant.descriptionTitle}</p>
-        <p class="details">${resultPlant.details}</p>
-        <p class="quote">"${resultPlant.quote}"</p>
-      `;
-    });
-
-    // Initial state: hide quiz, action buttons, and header content
-    quizContainer.style.display = 'none';
-    actionButtonsContainerElem.style.display = 'none';
-    resultDiv.style.display = 'none';
-    headerContent.style.opacity = '0'; // Hide header content initially
-    headerContent.style.display = 'none'; // Ensure display is none initially
-
-
-    // Event listener for the splash screen button
-    takeTestBtn.addEventListener('click', () => {
-        // Fade out the splash screen and its logo
-        splashScreen.classList.add('hidden');
-
-        // Wait for the splash screen transition to complete
-        splashScreen.addEventListener('transitionend', function handler() {
-            splashScreen.style.display = 'none'; // Fully hide splash screen after transition
-            splashScreen.removeEventListener('transitionend', handler);
-
-            // Show quiz container and header content
-            quizContainer.style.display = 'block';
-            headerContent.style.display = 'flex';
-
-            // Trigger fade-in for quiz container and header content
-            // A tiny delay might be needed for some browsers to register the display change before starting opacity transition
+        popupCopyButton.addEventListener('click', () => {
+            popupCaptionBox.select();
+            document.execCommand('copy');
+            // Provide visual feedback (optional)
+            const originalText = popupCopyButton.textContent;
+            popupCopyButton.textContent = "Copied!";
             setTimeout(() => {
-                quizContainer.style.opacity = '1';
-                headerContent.style.opacity = '1';
-                headerLogo.style.opacity = '1'; // Ensure header logo fades in
-            }, 50); // Small delay to ensure display property takes effect before opacity transition
-        }, { once: true });
-    });
+                popupCopyButton.textContent = originalText;
+            }, 1500);
+        });
 
-    // Initialize the quiz questions when the page loads, but quiz content is hidden by splash screen
-    window.onload = () => {
-        initializeQuiz();
-        // Set initial arrow for previous button, next button is already set in HTML
-        prevBtn.innerHTML = '&#x2190;';
-        // Event listeners for modals
-        messageBoxCloseBtn.addEventListener('click', hideMessageBox);
-        instagramModalCloseBtn.addEventListener('click', hideInstagramFollowModal);
-        downloadOptionsModalCloseBtn.addEventListener('click', hideDownloadOptionsModal); // Attach listener for new close button
-        retakeTestBtn.addEventListener('click', () => { location.reload(); }); // Add event listener for retake button
-    };
+        // Function to handle playing the webcam stream
+        async function playWebcam() {
+            console.log("playWebcam called. localStream:", localStream, "active:", localStream ? localStream.active : 'N/A');
+            if (localStream && localStream.active) {
+                console.log("Re-using active localStream.");
+                webcamVideo.srcObject = localStream;
+                webcamVideo.play();
+                applyWebcamTransforms();
+                setWebcamControlButtonsState(true);
+            } else {
+                console.log("Requesting new camera permission and stream.");
+                await requestCameraPermissionAndPlay();
+            }
+        }
 
-    // Event listener for the main DOWNLOAD PNG RESULT button (opens modal)
-    document.getElementById('downloadResultBtn').addEventListener('click', showDownloadOptionsModal);
+        showWebcamOptionsBtn.addEventListener('click', async () => {
+            console.log("Show Webcam Options button clicked.");
+            webcamOptionsSection.classList.remove('hidden');
+            showWebcamOptionsBtn.style.display = 'none';
+            selectGalleryBtn.style.display = 'none';
+            
+            webcamVideo.style.display = "block";
+            webcamVideo.srcObject = null;
 
-    // Event listeners for modal buttons
-    downloadLightModeBtn.addEventListener('click', (event) => {
-      const topPlant = resultDiv.querySelector('h2').textContent; // Get crop name
-      downloadResultImage(topPlant, event.currentTarget, 'light'); // Pass crop name and mode
-    });
+            await playWebcam();
+        });
 
-    downloadDarkModeBtn.addEventListener('click', (event) => {
-      const topPlant = resultDiv.querySelector('h2').textContent; // Get crop name
-      downloadResultImage(topPlant, event.currentTarget, 'dark'); // Pass crop name and mode
-    });
-  </script>
+        selectGalleryBtn.addEventListener('click', () => {
+            console.log("Select from Gallery button clicked.");
+            selectGalleryInput.click();
+            hidePhotoSourceModal();
+        });
+
+        // Listen for changes on the hidden file input for gallery
+        selectGalleryInput.addEventListener('change', handleImageUpload);
+
+        // Helper function for download and finalize button logic
+        function handleAction(actionType) {
+            if (!userImage || !frameLoaded || !userImage.src || currentImageSource === 'placeholder') {
+                showPopup("Please upload a picture or take one with the webcam first!");
+                return;
+            }
+
+            if (actionType === 'download') {
+                const link = document.createElement('a');
+                link.download = 'framed_picture.png';
+                link.href = imageCanvas.toDataURL('image/png'); // Captures content at canvas.width/height (1024x1024)
+                link.click();
+                showPopup("Your image is downloading... While waiting please copy the caption:", false, true, eventCaptionText);
+            } else if (actionType === 'finalize') {
+                try {
+                    const imageDataUrl = imageCanvas.toDataURL('image/png');
+                    const currentTransformState = {
+                        x: imageX,
+                        y: imageY,
+                        scale: scaleFactor,
+                        rotation: rotationAngle,
+                        flipH: flipH,
+                        flipV: flipV,
+                        brightness: brightness,
+                        contrast: contrast,
+                        saturation: saturation
+                    };
+                    localStorage.setItem('finalizedImageData', imageDataUrl);
+                    localStorage.setItem('finalizedImageTransformState', JSON.stringify(currentTransformState));
+                    console.log("Finalized picture and state saved to local storage.");
+
+                    let formattedTargetDate = "an unknown time";
+                    if (eventTargetDate) {
+                        const targetDateTime = new Date(eventTargetDate);
+                        formattedTargetDate = `${targetDateTime.toLocaleDateString()} at ${targetDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                    }
+                    showPopup(`Thank you for finalizing! This setting will be saved even if you exit the site. Please comeback on ${formattedTargetDate} in order to download your picture and join the DP Blast. Thank you!`);
+
+                } catch (error) {
+                    console.error("Error saving finalized picture to local storage:", error);
+                    showMessageBox("Failed to save finalized picture. Please try again.", true);
+                }
+            }
+        }
+
+        downloadBtn.addEventListener('click', () => handleAction('download'));
+        finalizePictureBtn.addEventListener('click', () => handleAction('finalize'));
+
+
+        // --- Core Image Handling Functions ---
+        function setImageOnCanvas(imgSrc, initialFlipH = 1) {
+            console.log("setImageOnCanvas called with imgSrc:", imgSrc.substring(0, 30) + "...", "initialFlipH:", initialFlipH);
+            const img = new Image();
+            img.onload = () => {
+                userImage = img;
+                currentImageSource = 'uploaded';
+                
+                const canvasWidth = imageCanvas.width;
+                const canvasHeight = imageCanvas.height;
+                let imgAspectRatio = userImage.width / userImage.height;
+                let initialDrawWidth, initialDrawHeight;
+
+                if (imgAspectRatio > 1) {
+                    initialDrawWidth = canvasWidth;
+                    initialDrawHeight = canvasWidth / imgAspectRatio;
+                } else {
+                    initialDrawHeight = canvasHeight;
+                    initialDrawWidth = canvasHeight * imgAspectRatio;
+                }
+
+                originalImageState = {
+                    x: (canvasWidth - initialDrawWidth) / 2,
+                    y: (canvasHeight - initialDrawHeight) / 2,
+                    scale: 1,
+                    rotation: 0,
+                    flipH: initialFlipH,
+                    flipV: 1
+                };
+
+                scaleFactor = originalImageState.scale;
+                rotationAngle = originalImageState.rotation;
+                flipH = originalImageState.flipH;
+                flipV = originalImageState.flipV;
+                imageX = originalImageState.x;
+                imageY = originalImageState.y;
+
+                frameOpacity = 1;
+                targetFrameOpacity = 1;
+                circleOverlayOpacity = 0;
+                targetCircleOverlayOpacity = 0;
+                facebookProfileSwitch.checked = false;
+
+                // Reset image adjustments to default and update UI
+                brightness = 100;
+                contrast = 100;
+                saturation = 100;
+                filterSelect.value = 'brightness'; // Set dropdown to brightness
+                filterSlider.value = 100; // Set slider to 100
+                updateFilterSliderUI(); // Update label and value for the slider
+
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+
+                drawImages();
+                setControlButtonsState(true);
+            };
+            img.src = imgSrc;
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    setImageOnCanvas(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // --- Opacity Animation Function ---
+        function animateCanvasEffects() {
+            const step = 0.05;
+            const tolerance = 0.01;
+
+            let frameOpacityReached = false;
+            let circleOpacityReached = false;
+
+            if (Math.abs(frameOpacity - targetFrameOpacity) < tolerance) {
+                frameOpacity = targetFrameOpacity;
+                frameOpacityReached = true;
+            } else {
+                if (frameOpacity < targetFrameOpacity) {
+                    frameOpacity += step;
+                } else {
+                    frameOpacity -= step;
+                }
+            }
+
+            if (Math.abs(circleOverlayOpacity - targetCircleOverlayOpacity) < tolerance) {
+                circleOverlayOpacity = targetCircleOverlayOpacity;
+                circleOpacityReached = true;
+            } else {
+                if (circleOverlayOpacity < targetCircleOverlayOpacity) {
+                    circleOverlayOpacity += step;
+                } else {
+                    circleOverlayOpacity -= step;
+                }
+            }
+
+            drawImages();
+
+            if (frameOpacityReached && circleOpacityReached) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            } else {
+                animationFrameId = requestAnimationFrame(animateCanvasEffects);
+            }
+        }
+
+        // --- Interaction Event Handlers (Shared logic for grid visibility and frame opacity) ---
+        function startInteraction() {
+            if (currentImageSource !== 'placeholder') {
+                showGrid = true;
+                if (gridTimer) clearTimeout(gridTimer);
+
+                targetFrameOpacity = 0.5;
+                if (animationFrameId === null) {
+                    animationFrameId = requestAnimationFrame(animateCanvasEffects);
+                }
+            }
+        }
+
+        function endInteraction() {
+            if (currentImageSource !== 'placeholder') {
+                if (gridTimer) clearTimeout(gridTimer);
+                
+                gridTimer = setTimeout(() => {
+                    showGrid = false;
+                    targetFrameOpacity = 1;
+                    if (animationFrameId === null) {
+                        animationFrameId = requestAnimationFrame(animateCanvasEffects);
+                    } else {
+                    }
+                    drawImages();
+                }, 150);
+            }
+        }
+
+        // --- Touch Event Listeners (Pinch-to-zoom & Drag) ---
+        imageCanvas.addEventListener('touchstart', (e) => {
+            if (!userImage || !frameLoaded || currentImageSource === 'placeholder') return; 
+
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                isPinching = true;
+                initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+                initialScaleFactorOnPinch = scaleFactor;
+                startInteraction();
+            } else if (e.touches.length === 1) {
+                e.preventDefault();
+                isDragging = true;
+                lastX = e.touches[0].clientX;
+                lastY = e.touches[0].clientY;
+                imageCanvas.classList.add('grabbing');
+                startInteraction();
+            }
+        });
+
+        imageCanvas.addEventListener('touchmove', (e) => {
+            if (!userImage || !frameLoaded || currentImageSource === 'placeholder') return;
+
+            if (isPinching && e.touches.length === 2) {
+                e.preventDefault();
+                const currentPinchDistance = getDistance(e.touches[0], e.touches[1]);
+                const newScale = initialScaleFactorOnPinch * (currentPinchDistance / initialPinchDistance);
+
+                const clampedNewScale = Math.max(0.5, Math.min(newScale, 2.0));
+
+                const rect = imageCanvas.getBoundingClientRect();
+                const touch1X = e.touches[0].clientX - rect.left;
+                const touch1Y = e.touches[0].clientY - rect.top;
+                const touch2X = e.touches[1].clientX - rect.left;
+                const touch2Y = e.touches[1].clientY - rect.top;
+                const centerX = (touch1X + touch2X) / 2;
+                const centerY = (touch1Y + touch2Y) / 2;
+
+                imageX = centerX - ((centerX - imageX) * (clampedNewScale / scaleFactor));
+                imageY = centerY - ((centerY - imageY) * (clampedNewScale / scaleFactor));
+
+                scaleFactor = clampedNewScale;
+                
+                console.log(`Pinch: newScale=${scaleFactor.toFixed(2)}, imageX=${imageX.toFixed(2)}, imageY=${imageY.toFixed(2)}`);
+
+                drawImages();
+            } else if (isDragging && e.touches.length === 1) {
+                e.preventDefault();
+                const currentX = e.touches[0].clientX;
+                const currentY = e.touches[0].clientY;
+                const dx = currentX - lastX;
+                const dy = currentY - lastY;
+
+                imageX += dx;
+                imageY += dy;
+
+                lastX = currentX;
+                lastY = currentY;
+                drawImages();
+            }
+        });
+
+        imageCanvas.addEventListener('touchend', (e) => {
+            isPinching = false;
+            isDragging = false;
+            imageCanvas.classList.remove('grabbing');
+            if (e.touches.length < 2) {
+                initialPinchDistance = 0;
+            }
+            endInteraction();
+        });
+
+        // --- Mouse Event Listeners (Scroll-to-zoom & Drag) ---
+        imageCanvas.addEventListener('mousedown', (e) => {
+            if (!userImage || !frameLoaded || currentImageSource === 'placeholder') return; 
+            if (e.button === 0) {
+                isDragging = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                imageCanvas.classList.add('grabbing');
+                startInteraction();
+            }
+        });
+
+        imageCanvas.addEventListener('mousemove', (e) => {
+            if (!userImage || !frameLoaded || currentImageSource === 'placeholder') return;
+            if (isDragging) {
+                const currentX = e.clientX;
+                const currentY = e.clientY;
+                const dx = currentX - lastX;
+                const dy = currentY - lastY;
+
+                imageX += dx;
+                imageY += dy;
+
+                lastX = currentX;
+                lastY = currentY;
+                drawImages();
+            }
+        });
+
+        imageCanvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            imageCanvas.classList.remove('grabbing');
+            endInteraction();
+        });
+
+        imageCanvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            imageCanvas.classList.remove('grabbing');
+            endInteraction();
+        });
+
+        imageCanvas.addEventListener('wheel', (e) => {
+            if (userImage && frameLoaded && currentImageSource !== 'placeholder') { 
+                e.preventDefault();
+                startInteraction();
+
+                const zoomSensitivity = 0.05;
+                const zoomDirection = e.deltaY < 0 ? 1 : -1;
+
+                let newScale = scaleFactor + (zoomDirection * zoomSensitivity);
+
+                newScale = Math.max(0.5, Math.min(newScale, 2.0));
+
+                const rect = imageCanvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                imageX = mouseX - ((mouseX - imageX) * (newScale / scaleFactor));
+                imageY = mouseY - ((mouseY - imageY) * (newScale / scaleFactor));
+
+                scaleFactor = newScale;
+                drawImages();
+                endInteraction();
+            }
+        });
+
+        // --- Control Button Event Listeners ---
+        zoomInBtn.addEventListener('click', () => {
+            if (currentImageSource !== 'placeholder') {
+                scaleFactor = Math.min(scaleFactor + 0.1, 2.0);
+                drawImages();
+            }
+        });
+
+        zoomOutBtn.addEventListener('click', () => {
+            if (currentImageSource !== 'placeholder') {
+                scaleFactor = Math.max(scaleFactor - 0.1, 0.5);
+                drawImages();
+            }
+        });
+
+        rotateLeftBtn.addEventListener('click', () => {
+            if (currentImageSource !== 'placeholder') {
+                rotationAngle = (rotationAngle - 45 + 360) % 360;
+                drawImages();
+            }
+        });
+
+        rotateRightBtn.addEventListener('click', () => {
+            if (currentImageSource !== 'placeholder') {
+                rotationAngle = (rotationAngle + 45) % 360;
+                drawImages();
+            }
+        });
+
+        flipHorizontalBtn.addEventListener('click', () => {
+            if (currentImageSource !== 'placeholder') {
+                flipH *= -1;
+                drawImages();
+            }
+        });
+
+        flipVerticalBtn.addEventListener('click', () => {
+            if (currentImageSource !== 'placeholder') {
+                flipV *= -1;
+                drawImages();
+            }
+        });
+
+        revertPhotoBtn.addEventListener('click', () => {
+            if (currentImageSource !== 'placeholder') {
+                scaleFactor = originalImageState.scale;
+                rotationAngle = originalImageState.rotation;
+                flipH = originalImageState.flipH;
+                flipV = originalImageState.flipV;
+                imageX = originalImageState.x;
+                imageY = originalImageState.y;
+                drawImages();
+            }
+        });
+
+        revertFiltersBtn.addEventListener('click', () => {
+            if (currentImageSource !== 'placeholder') {
+                brightness = 100;
+                contrast = 100;
+                saturation = 100;
+                filterSelect.value = 'brightness'; // Reset dropdown to brightness
+                filterSlider.value = 100; // Reset slider to 100
+                updateFilterSliderUI(); // Update UI to reflect reset
+                drawImages();
+            }
+        });
+
+        // --- Filter Slider and Dropdown Logic ---
+        function updateFilterSliderUI() {
+            const selectedFilter = filterSelect.value;
+            let currentValue = 100; // Default value
+
+            switch (selectedFilter) {
+                case 'brightness':
+                    currentValue = brightness;
+                    filterLabel.textContent = 'Brightness';
+                    break;
+                case 'contrast':
+                    currentValue = contrast;
+                    filterLabel.textContent = 'Contrast';
+                    break;
+                case 'saturation':
+                    currentValue = saturation;
+                    filterLabel.textContent = 'Saturation';
+                    break;
+            }
+            filterSlider.value = currentValue;
+            filterValue.textContent = `${currentValue}%`;
+        }
+
+        filterSelect.addEventListener('change', updateFilterSliderUI);
+
+        filterSlider.addEventListener('input', () => {
+            const selectedFilter = filterSelect.value;
+            const value = parseInt(filterSlider.value);
+
+            switch (selectedFilter) {
+                case 'brightness':
+                    brightness = value;
+                    break;
+                case 'contrast':
+                    contrast = value;
+                    break;
+                case 'saturation':
+                    saturation = value;
+                    break;
+            }
+            filterValue.textContent = `${value}%`;
+            drawImages();
+        });
+
+        // --- Facebook Profile Switch Event Listener ---
+        facebookProfileSwitch.addEventListener('change', () => {
+            isFacebookProfileMode = facebookProfileSwitch.checked;
+            drawImages();
+        });
+
+
+        // Helper function to calculate distance between two touch points
+        function getDistance(touch1, touch2) {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // Function to draw the grid overlay
+        function drawGrid() {
+            if (!showGrid) return;
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+
+            const canvasWidth = imageCanvas.width;
+            const canvasHeight = imageCanvas.height;
+
+            ctx.beginPath();
+            ctx.moveTo(canvasWidth / 3, 0);
+            ctx.lineTo(canvasWidth / 3, canvasHeight);
+            ctx.moveTo(canvasWidth * 2 / 3, 0);
+            ctx.lineTo(canvasWidth * 2 / 3, canvasHeight);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(0, canvasHeight / 3);
+            ctx.lineTo(canvasWidth, canvasHeight / 3);
+            ctx.moveTo(0, canvasHeight * 2 / 3);
+            ctx.lineTo(canvasWidth, canvasHeight * 2 / 3);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+
+        // Ensure the canvas is responsive
+        function resizeCanvas() {
+            const containerWidth = imageCanvas.parentElement.clientWidth;
+            const size = Math.min(containerWidth, 1024); 
+            imageCanvas.width = size;
+            imageCanvas.height = size;
+            
+            if (userImage && frameLoaded && currentImageSource !== 'placeholder') {
+                const imgAspectRatio = userImage.width / userImage.height;
+                let initialDrawWidth, initialDrawHeight;
+
+                if (imgAspectRatio > 1) {
+                    initialDrawWidth = imageCanvas.width;
+                    initialDrawHeight = imageCanvas.width / imgAspectRatio;
+                } else {
+                    initialDrawHeight = imageCanvas.height;
+                    initialDrawWidth = imageCanvas.height * imgAspectRatio;
+                }
+                if (scaleFactor === originalImageState.scale && rotationAngle === originalImageState.rotation &&
+                    flipH === originalImageState.flipH && flipV === originalImageState.flipV) {
+                    imageX = (imageCanvas.width - initialDrawWidth) / 2;
+                    imageY = (imageCanvas.height - initialDrawHeight) / 2;
+                }
+            }
+            drawImages();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.onload = async function() {
+            resizeCanvas();
+
+            const loadImage = (imageElement, isPlaceholder = false, isFacebookView = false) => {
+                return new Promise((resolve, reject) => {
+                    imageElement.onload = () => {
+                        if (isPlaceholder) placeholderLoaded = true;
+                        else if (isFacebookView) facebookViewImageLoaded = true;
+                        else frameLoaded = true;
+                        console.log(`${isPlaceholder ? 'Placeholder' : isFacebookView ? 'Facebook View' : 'Frame'} image loaded.`);
+                        resolve();
+                    };
+                    imageElement.onerror = () => {
+                        console.error(`Failed to load ${isPlaceholder ? 'placeholder' : isFacebookView ? 'Facebook View' : 'frame'} image.`);
+                        showMessageBox(`Error loading the ${isPlaceholder ? 'placeholder image' : isFacebookView ? 'Facebook View overlay' : 'secret garden frame'}. Please ensure '${imageElement.src.split('/').pop()}' is in the same folder as this HTML file.`, true);
+                        reject();
+                    };
+                    if (imageElement.complete && imageElement.naturalHeight !== 0) {
+                        if (isPlaceholder) placeholderLoaded = true;
+                        else if (isFacebookView) facebookViewImageLoaded = true;
+                        else frameLoaded = true;
+                        console.log(`${isPlaceholder ? 'Placeholder' : isFacebookView ? 'Facebook View' : 'Frame'} image already loaded (cached).`);
+                        resolve();
+                    }
+                });
+            };
+
+            try {
+                const savedImageData = localStorage.getItem('finalizedImageData');
+                const savedTransformState = localStorage.getItem('finalizedImageTransformState');
+
+                if (savedImageData && savedTransformState) {
+                    console.log("Loading finalized picture and state from local storage.");
+                    currentImageSource = 'finalized';
+                    
+                    const parsedTransformState = JSON.parse(savedTransformState);
+                    imageX = parsedTransformState.x;
+                    imageY = parsedTransformState.y;
+                    scaleFactor = parsedTransformState.scale;
+                    rotationAngle = parsedTransformState.rotation;
+                    flipH = parsedTransformState.flipH;
+                    flipV = parsedTransformState.flipV;
+                    brightness = parsedTransformState.brightness;
+                    contrast = parsedTransformState.contrast;
+                    saturation = parsedTransformState.saturation;
+
+                    // Update filter UI based on loaded values
+                    filterSelect.value = 'brightness'; // Default to brightness on load
+                    updateFilterSliderUI(); // Update UI to reflect loaded values
+
+                    originalImageState = {
+                        x: imageX,
+                        y: imageY,
+                        scale: scaleFactor,
+                        rotation: rotationAngle,
+                        flipH: flipH,
+                        flipV: flipV
+                    };
+                    userImage.src = savedImageData;
+                    await loadImage(userImage);
+                    setControlButtonsState(true);
+                } else {
+                    userImage.src = 'Placeholder.jpg';
+                    await loadImage(userImage, true);
+                    currentImageSource = 'placeholder';
+                    setControlButtonsState(false);
+                }
+
+                await loadImage(frameImage);
+                await loadImage(facebookViewImage, false, true);
+
+                drawImages();
+
+            } catch (error) {
+                console.error("Initialization error:", error);
+            }
+        };
+
+
+        function drawImages() {
+            if (!userImage || !frameLoaded || !userImage.src || (currentImageSource === 'placeholder' && !placeholderLoaded)) { 
+                console.log("Waiting for images to load or userImage.src is empty/placeholder not loaded...");
+                return;
+            }
+
+            const canvasWidth = imageCanvas.width;
+            const canvasHeight = imageCanvas.height;
+
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // --- 1. Draw Blurred Background ---
+            if (currentImageSource !== 'placeholder') {
+                ctx.save();
+                ctx.filter = 'blur(10px)';
+
+                let sourceX = 0;
+                let sourceY = 0;
+                let sourceWidth = userImage.width;
+                let sourceHeight = userImage.height;
+
+                const imageAspectRatio = userImage.width / userImage.height;
+                const canvasAspectRatio = canvasWidth / canvasHeight;
+
+                if (imageAspectRatio > canvasAspectRatio) {
+                    sourceWidth = userImage.height * canvasAspectRatio;
+                    sourceX = (userImage.width - sourceWidth) / 2;
+                } else {
+                    sourceHeight = userImage.width / canvasAspectRatio;
+                    sourceY = (userImage.height - sourceHeight) / 2;
+                }
+
+                ctx.drawImage(userImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvasWidth, canvasHeight);
+                ctx.restore();
+            }
+
+            // --- 2. Draw Main User Image (with filters and transformations) ---
+            ctx.save();
+
+            ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+
+            let imgAspectRatio = userImage.width / userImage.height;
+            let initialDrawWidth, initialDrawHeight;
+
+            if (imgAspectRatio > canvasWidth / canvasHeight) {
+                initialDrawWidth = canvasWidth;
+                initialDrawHeight = canvasWidth / imgAspectRatio;
+            } else {
+                initialDrawHeight = canvasHeight;
+                initialDrawWidth = canvasHeight * imgAspectRatio;
+            }
+
+            let scaledWidth = initialDrawWidth * scaleFactor;
+            let scaledHeight = initialDrawHeight * scaleFactor;
+
+            ctx.translate(imageX + scaledWidth / 2, imageY + scaledHeight / 2);
+
+            ctx.rotate(rotationAngle * Math.PI / 180);
+
+            ctx.scale(flipH, flipV);
+
+            ctx.drawImage(userImage, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+
+            ctx.restore();
+
+            ctx.filter = 'none'; 
+
+            // --- 3. Draw Frame Image (full canvas, with dynamic opacity) ---
+            ctx.save();
+            ctx.globalAlpha = frameOpacity;
+            ctx.drawImage(frameImage, 0, 0, canvasWidth, canvasHeight);
+            ctx.restore();
+
+            // --- 4. Draw Facebook Overlay (if enabled) ---
+            if (isFacebookProfileMode && facebookViewImageLoaded) {
+                ctx.save();
+                ctx.drawImage(facebookViewImage, 0, 0, canvasWidth, canvasHeight);
+                ctx.restore();
+                console.log("Facebook Mode: Drawing Facebook View overlay on top.");
+            }
+
+            // --- 5. Draw Grid (always on top for UI guidance) ---
+            drawGrid();
+            console.log("Canvas drawn. Current flipH:", flipH, "Facebook Mode:", isFacebookProfileMode);
+        }
+
+        // --- WebRTC Camera Functions ---
+        async function requestCameraPermissionAndPlay() {
+            console.log("requestCameraPermissionAndPlay called.");
+
+            let currentPermissionStatus = localStorage.getItem(CAMERA_PERMISSION_KEY);
+
+            if (currentPermissionStatus === 'denied') {
+                showMessageBox("Camera access was previously denied. Please enable it manually in your browser settings to use the webcam.", true);
+                setWebcamControlButtonsState(false);
+                return;
+            }
+
+            try {
+                const constraints = { 
+                    audio: false, 
+                    video: {
+                        width: { ideal: 3840 },
+                        height: { ideal: 2160 },
+                        facingMode: webcamCurrentFacingMode
+                    } 
+                };
+
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log("getUserMedia successful. Stream obtained:", localStream);
+                localStorage.setItem(CAMERA_PERMISSION_KEY, 'granted');
+                webcamVideo.srcObject = localStream;
+                webcamVideo.play();
+                applyWebcamTransforms();
+
+                if ("ImageCapture" in window) {
+                    const track = localStream.getVideoTracks()[0];
+                    imageCapture = new ImageCapture(track);
+                    console.log("ImageCapture API available and initialized.");
+                } else {
+                    console.log("ImageCapture API not available. Falling back to canvas capture.");
+                }
+                setWebcamControlButtonsState(true);
+                await loadCameraDevices();
+            } catch (err) {
+                console.error('getUserMediaError', err, err.stack);
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    localStorage.setItem(CAMERA_PERMISSION_KEY, 'denied');
+                    showMessageBox("Camera access was denied. Please allow camera permissions in your browser settings to use this feature.", true);
+                } else if (err.name === 'NotFoundError') {
+                    showMessageBox("No camera found. Please ensure a camera is connected and enabled.", true);
+                } else {
+                    showMessageBox(`Could not start camera. ${err.name}: ${err.message}`, true);
+                }
+                setWebcamControlButtonsState(false);
+            }
+        }
+
+        async function loadCameraDevices() {
+            cameraDevices = [];
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                for (let i = 0; i < devices.length; i++) {
+                    let device = devices[i];
+                    if (device.kind === 'videoinput') {
+                        cameraDevices.push(device);
+                    }
+                }
+                console.log("Detected camera devices:", cameraDevices.length);
+                setWebcamControlButtonsState(localStream !== null);
+            } catch (e) {
+                console.error("Error enumerating devices:", e);
+            }
+        }
+
+        function applyWebcamTransforms() {
+            let transformString = '';
+            if (webcamPreviewFlip === -1) {
+                transformString += `scaleX(-1) `;
+            }
+            webcamVideo.style.transform = transformString.trim();
+            console.log("Webcam video transform applied:", webcamVideo.style.transform);
+        }
+
+        function stopWebcam() {
+            console.log("stopWebcam called. Stopping localStream if active.");
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    track.stop();
+                    console.log("Track stopped:", track.kind);
+                });
+                localStream = null;
+            }
+            webcamVideo.srcObject = null;
+            webcamVideo.pause();
+            webcamVideo.currentTime = 0;
+            setWebcamControlButtonsState(false);
+            webcamPreviewFlip = 1;
+            applyWebcamTransforms();
+            console.log("Webcam stream stopped and state reset.");
+        }
+
+        function captureFrame() {
+            console.log("captureFrame called. Capturing raw frame (no flip applied here).");
+            if (!webcamVideo.srcObject) {
+                console.warn("No video stream to capture from.");
+                return null;
+            }
+
+            hiddenCanvas.width = webcamVideo.videoWidth;
+            hiddenCanvas.height = webcamVideo.videoHeight;
+            let hCtx = hiddenCanvas.getContext('2d');
+
+            hCtx.clearRect(0, 0, hiddenCanvas.width, hiddenCanvas.height);
+
+            hCtx.drawImage(webcamVideo, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+
+            return hiddenCanvas.toDataURL("image/png");
+        }
+
+        captureWebcamPhotoBtn.addEventListener('click', async () => {
+            console.log("Capture Webcam Photo button clicked.");
+            let imgSrc = captureFrame();
+
+            if (imgSrc) {
+                setImageOnCanvas(imgSrc, webcamPreviewFlip); 
+                hidePhotoSourceModal();
+            } else {
+                showMessageBox("Could not capture photo. Please ensure camera is started.", true);
+            }
+        });
+
+        flipWebcamCaptureBtn.addEventListener('click', () => {
+            webcamPreviewFlip *= -1;
+            applyWebcamTransforms();
+            console.log("Webcam live preview flip toggled. webcamPreviewFlip:", webcamPreviewFlip);
+        });
+
+        flipCameraButton.addEventListener('click', async () => {
+            console.log("Flip Camera button clicked. Current facing mode:", webcamCurrentFacingMode);
+            webcamCurrentFacingMode = (webcamCurrentFacingMode === 'user') ? 'environment' : 'user';
+            webcamPreviewFlip = 1;
+            console.log("New facing mode:", webcamCurrentFacingMode, "webcamPreviewFlip reset to 1.");
+            await requestCameraPermissionAndPlay();
+        });
+
+    </script>
 </body>
 </html>
