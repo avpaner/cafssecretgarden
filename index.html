@@ -560,13 +560,37 @@
         #downloadBtn {
             margin-top: 0; /* Remove default margin-top */
         }
-        /* Add a gap between the two buttons */
-        #finalizePictureBtn + #downloadBtn {
-            margin-top: 10px; /* Add a gap between finalize and download buttons */
+
+        /* Loading Overlay Styles */
+        #loadingOverlay {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #loadingOverlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .loader {
+            border-top-color: var(--color-accent-gold); /* Use your accent color */
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @-webkit-keyframes spinner {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white bg-opacity-75 flex flex-col items-center justify-center z-[9999] opacity-0 invisible transition-opacity duration-300">
+        <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24 mb-4"></div>
+        <p class="text-xl font-semibold text-gray-700" id="loadingMessage">Loading resources...</p>
+    </div>
+
     <div class="container">
         <h1 class="text-3xl font-bold" style="color: var(--color-primary-text);">Secret Garden Frame Adder</h1>
 
@@ -742,12 +766,14 @@
         // New Facebook Profile View elements
         const facebookProfileSwitch = document.getElementById('facebookProfileSwitch');
 
+        // Loading Overlay Elements
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingMessage = document.getElementById('loadingMessage');
+
 
         // Global Variables
-        let userImage = new Image();
-        // userImage.src will be set in window.onload based on local storage or default placeholder
-
-        let originalImageState = { // Store original state for revert
+        let userImage = new Image(); // This will hold the original, high-res user image
+        let originalImageState = { // Store original state for revert, relative to preview canvas
             x: 0,
             y: 0,
             scale: 1,
@@ -760,9 +786,9 @@
         let placeholderLoaded = false;
         let facebookViewImageLoaded = false; // New: Flag for Facebook View image
         let currentImageSource = 'placeholder'; // 'placeholder', 'uploaded', 'webcam', 'finalized'
-        let scaleFactor = 1;
-        let imageX = 0;
-        let imageY = 0;
+        let scaleFactor = 1; // Relative to preview canvas
+        let imageX = 0;      // Relative to preview canvas
+        let imageY = 0;      // Relative to preview canvas
         let rotationAngle = 0;
         let flipH = 1;
         let flipV = 1;
@@ -929,6 +955,16 @@
             flipCameraButton.disabled = !(enabled && cameraDevices.length > 1);
         }
 
+        // --- Loading Overlay Functions ---
+        function showLoading(message) {
+            loadingMessage.textContent = message;
+            loadingOverlay.classList.add('visible');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.remove('visible');
+        }
+
         // --- Event Listeners ---
         imageUploadTrigger.addEventListener('click', showPhotoSourceModal);
         closeModal.addEventListener('click', hidePhotoSourceModal);
@@ -1000,40 +1036,50 @@
             }
 
             if (actionType === 'download') {
-                const link = document.createElement('a');
-                link.download = 'framed_picture.png';
-                link.href = imageCanvas.toDataURL('image/png'); // Captures content at canvas.width/height (1024x1024)
-                link.click();
-                showPopup("Your image is downloading... While waiting please copy the caption:", false, true, eventCaptionText);
+                showLoading("Generating high-quality image...");
+                // Use a timeout to allow the loading screen to render before heavy canvas operations
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.download = 'framed_picture.png';
+                    link.href = drawFinalImage(); // Get data URL from high-res offscreen canvas
+                    link.click();
+                    hideLoading();
+                    showPopup("Your image is downloading... While waiting please copy the caption:", false, true, eventCaptionText);
+                }, 10); // Small delay
             } else if (actionType === 'finalize') {
-                try {
-                    const imageDataUrl = imageCanvas.toDataURL('image/png');
-                    const currentTransformState = {
-                        x: imageX,
-                        y: imageY,
-                        scale: scaleFactor,
-                        rotation: rotationAngle,
-                        flipH: flipH,
-                        flipV: flipV,
-                        brightness: brightness,
-                        contrast: contrast,
-                        saturation: saturation
-                    };
-                    localStorage.setItem('finalizedImageData', imageDataUrl);
-                    localStorage.setItem('finalizedImageTransformState', JSON.stringify(currentTransformState));
-                    console.log("Finalized picture and state saved to local storage.");
+                showLoading("Finalizing picture...");
+                setTimeout(() => {
+                    try {
+                        const imageDataUrl = drawFinalImage(); // Save high-res image
+                        const currentTransformState = {
+                            x: imageX,
+                            y: imageY,
+                            scale: scaleFactor,
+                            rotation: rotationAngle,
+                            flipH: flipH,
+                            flipV: flipV,
+                            brightness: brightness,
+                            contrast: contrast,
+                            saturation: saturation
+                        };
+                        localStorage.setItem('finalizedImageData', imageDataUrl);
+                        localStorage.setItem('finalizedImageTransformState', JSON.stringify(currentTransformState));
+                        console.log("Finalized picture and state saved to local storage.");
 
-                    let formattedTargetDate = "an unknown time";
-                    if (eventTargetDate) {
-                        const targetDateTime = new Date(eventTargetDate);
-                        formattedTargetDate = `${targetDateTime.toLocaleDateString()} at ${targetDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                        let formattedTargetDate = "an unknown time";
+                        if (eventTargetDate) {
+                            const targetDateTime = new Date(eventTargetDate);
+                            formattedTargetDate = `${targetDateTime.toLocaleDateString()} at ${targetDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                        }
+                        hideLoading();
+                        showPopup(`Thank you for finalizing! This setting will be saved even if you exit the site. Please comeback on ${formattedTargetDate} in order to download your picture and join the DP Blast. Thank you!`);
+
+                    } catch (error) {
+                        console.error("Error saving finalized picture to local storage:", error);
+                        hideLoading();
+                        showMessageBox("Failed to save finalized picture. Please try again.", true);
                     }
-                    showPopup(`Thank you for finalizing! This setting will be saved even if you exit the site. Please comeback on ${formattedTargetDate} in order to download your picture and join the DP Blast. Thank you!`);
-
-                } catch (error) {
-                    console.error("Error saving finalized picture to local storage:", error);
-                    showMessageBox("Failed to save finalized picture. Please try again.", true);
-                }
+                }, 10); // Small delay
             }
         }
 
@@ -1044,33 +1090,38 @@
         // --- Core Image Handling Functions ---
         function setImageOnCanvas(imgSrc, initialFlipH = 1) {
             console.log("setImageOnCanvas called with imgSrc:", imgSrc.substring(0, 30) + "...", "initialFlipH:", initialFlipH);
+            showLoading("Processing photo..."); // Show loading when new image is set
             const img = new Image();
             img.onload = () => {
-                userImage = img;
+                userImage = img; // userImage now holds the full resolution image
                 currentImageSource = 'uploaded';
                 
                 const canvasWidth = imageCanvas.width;
                 const canvasHeight = imageCanvas.height;
-                let imgAspectRatio = userImage.width / userImage.height;
-                let initialDrawWidth, initialDrawHeight;
+                
+                // Calculate initial fit for the preview canvas
+                let imgAspectRatio = userImage.naturalWidth / userImage.naturalHeight;
+                let initialDrawWidthPreview, initialDrawHeightPreview;
 
-                if (imgAspectRatio > 1) {
-                    initialDrawWidth = canvasWidth;
-                    initialDrawHeight = canvasWidth / imgAspectRatio;
+                if (imgAspectRatio > canvasWidth / canvasHeight) {
+                    initialDrawWidthPreview = canvasWidth;
+                    initialDrawHeightPreview = canvasWidth / imgAspectRatio;
                 } else {
-                    initialDrawHeight = canvasHeight;
-                    initialDrawWidth = canvasHeight * imgAspectRatio;
+                    initialDrawHeightPreview = canvasHeight;
+                    initialDrawWidthPreview = canvasHeight * imgAspectRatio;
                 }
 
+                // Initial state for transformations, relative to preview canvas
                 originalImageState = {
-                    x: (canvasWidth - initialDrawWidth) / 2,
-                    y: (canvasHeight - initialDrawHeight) / 2,
-                    scale: 1,
+                    x: (canvasWidth - initialDrawWidthPreview) / 2,
+                    y: (canvasHeight - initialDrawHeightPreview) / 2,
+                    scale: 1, // This scale is relative to the initial fit on the preview canvas
                     rotation: 0,
                     flipH: initialFlipH,
                     flipV: 1
                 };
 
+                // Apply initial state to current transformation variables
                 scaleFactor = originalImageState.scale;
                 rotationAngle = originalImageState.rotation;
                 flipH = originalImageState.flipH;
@@ -1097,8 +1148,13 @@
                     animationFrameId = null;
                 }
 
-                drawImages();
+                drawPreviewImage(); // Draw to the visible preview canvas
                 setControlButtonsState(true);
+                hideLoading(); // Hide loading after image is set and drawn
+            };
+            img.onerror = () => {
+                hideLoading(); // Hide loading if image fails to load
+                showMessageBox("Failed to load image. Please try another file.", true);
             };
             img.src = imgSrc;
         }
@@ -1144,7 +1200,7 @@
                 }
             }
 
-            drawImages();
+            drawPreviewImage();
 
             if (frameOpacityReached && circleOpacityReached) {
                 cancelAnimationFrame(animationFrameId);
@@ -1178,7 +1234,7 @@
                         animationFrameId = requestAnimationFrame(animateCanvasEffects);
                     } else {
                     }
-                    drawImages();
+                    drawPreviewImage();
                 }, 150);
             }
         }
@@ -1228,7 +1284,7 @@
                 
                 console.log(`Pinch: newScale=${scaleFactor.toFixed(2)}, imageX=${imageX.toFixed(2)}, imageY=${imageY.toFixed(2)}`);
 
-                drawImages();
+                drawPreviewImage();
             } else if (isDragging && e.touches.length === 1) {
                 e.preventDefault();
                 const currentX = e.touches[0].clientX;
@@ -1241,7 +1297,7 @@
 
                 lastX = currentX;
                 lastY = currentY;
-                drawImages();
+                drawPreviewImage();
             }
         });
 
@@ -1280,7 +1336,7 @@
 
                 lastX = currentX;
                 lastY = currentY;
-                drawImages();
+                drawPreviewImage();
             }
         });
 
@@ -1316,7 +1372,7 @@
                 imageY = mouseY - ((mouseY - imageY) * (newScale / scaleFactor));
 
                 scaleFactor = newScale;
-                drawImages();
+                drawPreviewImage();
                 endInteraction();
             }
         });
@@ -1325,42 +1381,42 @@
         zoomInBtn.addEventListener('click', () => {
             if (currentImageSource !== 'placeholder') {
                 scaleFactor = Math.min(scaleFactor + 0.1, 2.0);
-                drawImages();
+                drawPreviewImage();
             }
         });
 
         zoomOutBtn.addEventListener('click', () => {
             if (currentImageSource !== 'placeholder') {
                 scaleFactor = Math.max(scaleFactor - 0.1, 0.5);
-                drawImages();
+                drawPreviewImage();
             }
         });
 
         rotateLeftBtn.addEventListener('click', () => {
             if (currentImageSource !== 'placeholder') {
                 rotationAngle = (rotationAngle - 45 + 360) % 360;
-                drawImages();
+                drawPreviewImage();
             }
         });
 
         rotateRightBtn.addEventListener('click', () => {
             if (currentImageSource !== 'placeholder') {
                 rotationAngle = (rotationAngle + 45) % 360;
-                drawImages();
+                drawPreviewImage();
             }
         });
 
         flipHorizontalBtn.addEventListener('click', () => {
             if (currentImageSource !== 'placeholder') {
                 flipH *= -1;
-                drawImages();
+                drawPreviewImage();
             }
         });
 
         flipVerticalBtn.addEventListener('click', () => {
             if (currentImageSource !== 'placeholder') {
                 flipV *= -1;
-                drawImages();
+                drawPreviewImage();
             }
         });
 
@@ -1372,7 +1428,7 @@
                 flipV = originalImageState.flipV;
                 imageX = originalImageState.x;
                 imageY = originalImageState.y;
-                drawImages();
+                drawPreviewImage();
             }
         });
 
@@ -1384,7 +1440,7 @@
                 filterSelect.value = 'brightness'; // Reset dropdown to brightness
                 filterSlider.value = 100; // Reset slider to 100
                 updateFilterSliderUI(); // Update UI to reflect reset
-                drawImages();
+                drawPreviewImage();
             }
         });
 
@@ -1429,13 +1485,13 @@
                     break;
             }
             filterValue.textContent = `${value}%`;
-            drawImages();
+            drawPreviewImage();
         });
 
         // --- Facebook Profile Switch Event Listener ---
         facebookProfileSwitch.addEventListener('change', () => {
             isFacebookProfileMode = facebookProfileSwitch.checked;
-            drawImages();
+            drawPreviewImage();
         });
 
 
@@ -1447,31 +1503,28 @@
         }
 
         // Function to draw the grid overlay
-        function drawGrid() {
+        function drawGrid(targetCtx, canvasWidth, canvasHeight) {
             if (!showGrid) return;
 
-            ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 1;
+            targetCtx.save();
+            targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            targetCtx.lineWidth = 1;
 
-            const canvasWidth = imageCanvas.width;
-            const canvasHeight = imageCanvas.height;
+            targetCtx.beginPath();
+            targetCtx.moveTo(canvasWidth / 3, 0);
+            targetCtx.lineTo(canvasWidth / 3, canvasHeight);
+            targetCtx.moveTo(canvasWidth * 2 / 3, 0);
+            targetCtx.lineTo(canvasWidth * 2 / 3, canvasHeight);
+            targetCtx.stroke();
 
-            ctx.beginPath();
-            ctx.moveTo(canvasWidth / 3, 0);
-            ctx.lineTo(canvasWidth / 3, canvasHeight);
-            ctx.moveTo(canvasWidth * 2 / 3, 0);
-            ctx.lineTo(canvasWidth * 2 / 3, canvasHeight);
-            ctx.stroke();
+            targetCtx.beginPath();
+            targetCtx.moveTo(0, canvasHeight / 3);
+            targetCtx.lineTo(canvasWidth, canvasHeight / 3);
+            targetCtx.moveTo(0, canvasHeight * 2 / 3);
+            targetCtx.lineTo(canvasWidth, canvasHeight * 2 / 3);
+            targetCtx.stroke();
 
-            ctx.beginPath();
-            ctx.moveTo(0, canvasHeight / 3);
-            ctx.lineTo(canvasWidth, canvasHeight / 3);
-            ctx.moveTo(0, canvasHeight * 2 / 3);
-            ctx.lineTo(canvasWidth, canvasHeight * 2 / 3);
-            ctx.stroke();
-
-            ctx.restore();
+            targetCtx.restore();
         }
 
 
@@ -1482,28 +1535,48 @@
             imageCanvas.width = size;
             imageCanvas.height = size;
             
+            // Adjust image position if canvas size changes, maintaining relative position
             if (userImage && frameLoaded && currentImageSource !== 'placeholder') {
-                const imgAspectRatio = userImage.width / userImage.height;
+                const imgAspectRatio = userImage.naturalWidth / userImage.naturalHeight;
                 let initialDrawWidth, initialDrawHeight;
 
-                if (imgAspectRatio > 1) {
+                if (imgAspectRatio > imageCanvas.width / imageCanvas.height) {
                     initialDrawWidth = imageCanvas.width;
                     initialDrawHeight = imageCanvas.width / imgAspectRatio;
                 } else {
                     initialDrawHeight = imageCanvas.height;
                     initialDrawWidth = imageCanvas.height * imgAspectRatio;
                 }
+
+                // If currently at original state, recalculate central position
                 if (scaleFactor === originalImageState.scale && rotationAngle === originalImageState.rotation &&
                     flipH === originalImageState.flipH && flipV === originalImageState.flipV) {
                     imageX = (imageCanvas.width - initialDrawWidth) / 2;
                     imageY = (imageCanvas.height - initialDrawHeight) / 2;
+                } else {
+                    // Otherwise, scale the existing position relative to the new canvas size
+                    const oldCanvasWidth = originalImageState.canvasWidth || 500; // Assume a default if not stored
+                    const oldCanvasHeight = originalImageState.canvasHeight || 500;
+                    
+                    if (oldCanvasWidth !== imageCanvas.width || oldCanvasHeight !== imageCanvas.height) {
+                        const widthRatio = imageCanvas.width / oldCanvasWidth;
+                        const heightRatio = imageCanvas.height / oldCanvasHeight;
+
+                        imageX *= widthRatio;
+                        imageY *= heightRatio;
+                        // Scale factor itself doesn't need to be scaled here, as it's a ratio
+                    }
                 }
+                // Update originalImageState with current canvas dimensions for future resizing reference
+                originalImageState.canvasWidth = imageCanvas.width;
+                originalImageState.canvasHeight = imageCanvas.height;
             }
-            drawImages();
+            drawPreviewImage();
         }
 
         window.addEventListener('resize', resizeCanvas);
         window.onload = async function() {
+            showLoading("Loading resources...");
             resizeCanvas();
 
             const loadImage = (imageElement, isPlaceholder = false, isFacebookView = false) => {
@@ -1559,13 +1632,15 @@
                         scale: scaleFactor,
                         rotation: rotationAngle,
                         flipH: flipH,
-                        flipV: flipV
+                        flipV: flipV,
+                        canvasWidth: imageCanvas.width, // Store canvas dimensions with the state
+                        canvasHeight: imageCanvas.height
                     };
                     userImage.src = savedImageData;
                     await loadImage(userImage);
                     setControlButtonsState(true);
                 } else {
-                    userImage.src = 'Placeholder.jpg';
+                    userImage.src = 'https://placehold.co/500x500/E0E0E0/ADADAD?text=Upload+Your+Image'; // Default placeholder
                     await loadImage(userImage, true);
                     currentImageSource = 'placeholder';
                     setControlButtonsState(false);
@@ -1574,99 +1649,199 @@
                 await loadImage(frameImage);
                 await loadImage(facebookViewImage, false, true);
 
-                drawImages();
-
+                drawPreviewImage(); // Initial draw after all resources are loaded
+                hideLoading(); // Hide loading after initial load
             } catch (error) {
                 console.error("Initialization error:", error);
+                hideLoading(); // Hide loading even if there's an error
+                showMessageBox("An error occurred during initialization. Please refresh the page.", true);
             }
         };
 
 
-        function drawImages() {
+        // Function to draw to the PREVIEW canvas
+        function drawPreviewImage() {
             if (!userImage || !frameLoaded || !userImage.src || (currentImageSource === 'placeholder' && !placeholderLoaded)) { 
-                console.log("Waiting for images to load or userImage.src is empty/placeholder not loaded...");
+                console.log("Waiting for images to load or userImage.src is empty/placeholder not loaded for preview...");
                 return;
             }
 
             const canvasWidth = imageCanvas.width;
             const canvasHeight = imageCanvas.height;
+            const targetCtx = ctx; // Use the main canvas context
 
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            targetCtx.clearRect(0, 0, canvasWidth, canvasHeight);
 
             // --- 1. Draw Blurred Background ---
             if (currentImageSource !== 'placeholder') {
-                ctx.save();
-                ctx.filter = 'blur(10px)';
+                targetCtx.save();
+                targetCtx.filter = 'blur(10px)';
 
                 let sourceX = 0;
                 let sourceY = 0;
-                let sourceWidth = userImage.width;
-                let sourceHeight = userImage.height;
+                let sourceWidth = userImage.naturalWidth;
+                let sourceHeight = userImage.naturalHeight;
 
-                const imageAspectRatio = userImage.width / userImage.height;
+                const imageAspectRatio = userImage.naturalWidth / userImage.naturalHeight;
                 const canvasAspectRatio = canvasWidth / canvasHeight;
 
                 if (imageAspectRatio > canvasAspectRatio) {
-                    sourceWidth = userImage.height * canvasAspectRatio;
-                    sourceX = (userImage.width - sourceWidth) / 2;
+                    sourceWidth = userImage.naturalHeight * canvasAspectRatio;
+                    sourceX = (userImage.naturalWidth - sourceWidth) / 2;
                 } else {
-                    sourceHeight = userImage.width / canvasAspectRatio;
-                    sourceY = (userImage.height - sourceHeight) / 2;
+                    sourceHeight = userImage.naturalWidth / canvasAspectRatio;
+                    sourceY = (userImage.naturalHeight - sourceHeight) / 2;
                 }
 
-                ctx.drawImage(userImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvasWidth, canvasHeight);
-                ctx.restore();
+                targetCtx.drawImage(userImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvasWidth, canvasHeight);
+                targetCtx.restore();
             }
 
             // --- 2. Draw Main User Image (with filters and transformations) ---
-            ctx.save();
+            targetCtx.save();
 
-            ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+            targetCtx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
 
-            let imgAspectRatio = userImage.width / userImage.height;
-            let initialDrawWidth, initialDrawHeight;
+            // Calculate initial fit for the user image on the PREVIEW canvas
+            let imgAspectRatio = userImage.naturalWidth / userImage.naturalHeight;
+            let initialDrawWidthPreview, initialDrawHeightPreview;
 
             if (imgAspectRatio > canvasWidth / canvasHeight) {
-                initialDrawWidth = canvasWidth;
-                initialDrawHeight = canvasWidth / imgAspectRatio;
+                initialDrawWidthPreview = canvasWidth;
+                initialDrawHeightPreview = canvasWidth / imgAspectRatio;
             } else {
-                initialDrawHeight = canvasHeight;
-                initialDrawWidth = canvasHeight * imgAspectRatio;
+                initialDrawHeightPreview = canvasHeight;
+                initialDrawWidthPreview = canvasHeight * imgAspectRatio;
             }
 
-            let scaledWidth = initialDrawWidth * scaleFactor;
-            let scaledHeight = initialDrawHeight * scaleFactor;
+            let scaledWidth = initialDrawWidthPreview * scaleFactor;
+            let scaledHeight = initialDrawHeightPreview * scaleFactor;
 
-            ctx.translate(imageX + scaledWidth / 2, imageY + scaledHeight / 2);
+            targetCtx.translate(imageX + scaledWidth / 2, imageY + scaledHeight / 2);
+            targetCtx.rotate(rotationAngle * Math.PI / 180);
+            targetCtx.scale(flipH, flipV);
 
-            ctx.rotate(rotationAngle * Math.PI / 180);
+            targetCtx.drawImage(userImage, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
 
-            ctx.scale(flipH, flipV);
-
-            ctx.drawImage(userImage, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
-
-            ctx.restore();
-
-            ctx.filter = 'none'; 
+            targetCtx.restore();
+            targetCtx.filter = 'none'; 
 
             // --- 3. Draw Frame Image (full canvas, with dynamic opacity) ---
-            ctx.save();
-            ctx.globalAlpha = frameOpacity;
-            ctx.drawImage(frameImage, 0, 0, canvasWidth, canvasHeight);
-            ctx.restore();
+            targetCtx.save();
+            targetCtx.globalAlpha = frameOpacity;
+            targetCtx.drawImage(frameImage, 0, 0, canvasWidth, canvasHeight);
+            targetCtx.restore();
 
             // --- 4. Draw Facebook Overlay (if enabled) ---
             if (isFacebookProfileMode && facebookViewImageLoaded) {
-                ctx.save();
-                ctx.drawImage(facebookViewImage, 0, 0, canvasWidth, canvasHeight);
-                ctx.restore();
-                console.log("Facebook Mode: Drawing Facebook View overlay on top.");
+                targetCtx.save();
+                targetCtx.drawImage(facebookViewImage, 0, 0, canvasWidth, canvasHeight);
+                targetCtx.restore();
+                console.log("Facebook Mode: Drawing Facebook View overlay on top of preview.");
             }
 
             // --- 5. Draw Grid (always on top for UI guidance) ---
-            drawGrid();
-            console.log("Canvas drawn. Current flipH:", flipH, "Facebook Mode:", isFacebookProfileMode);
+            drawGrid(targetCtx, canvasWidth, canvasHeight);
+            console.log("Preview Canvas drawn. Current flipH:", flipH, "Facebook Mode:", isFacebookProfileMode);
         }
+
+        // Function to draw to an OFFSCREEN high-quality canvas for download/finalize
+        function drawFinalImage() {
+            if (!userImage || !frameLoaded || !userImage.src || (currentImageSource === 'placeholder' && !placeholderLoaded)) {
+                console.error("Cannot draw final image: resources not loaded or no user image.");
+                return null;
+            }
+
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = frameImage.naturalWidth; // Use natural resolution of the frame for final output
+            offscreenCanvas.height = frameImage.naturalHeight;
+            const offscreenCtx = offscreenCanvas.getContext('2d');
+
+            offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+            // Calculate scaling ratio from preview canvas to high-res canvas
+            const scaleRatio = offscreenCanvas.width / imageCanvas.width;
+
+            // --- 1. Draw Blurred Background (scaled for high-res) ---
+            if (currentImageSource !== 'placeholder') {
+                offscreenCtx.save();
+                offscreenCtx.filter = 'blur(10px)'; // Blur amount might need adjustment for high-res
+
+                let sourceX = 0;
+                let sourceY = 0;
+                let sourceWidth = userImage.naturalWidth;
+                let sourceHeight = userImage.naturalHeight;
+
+                const imageAspectRatio = userImage.naturalWidth / userImage.naturalHeight;
+                const canvasAspectRatio = offscreenCanvas.width / offscreenCanvas.height;
+
+                if (imageAspectRatio > canvasAspectRatio) {
+                    sourceWidth = userImage.naturalHeight * canvasAspectRatio;
+                    sourceX = (userImage.naturalWidth - sourceWidth) / 2;
+                } else {
+                    sourceHeight = userImage.naturalWidth / canvasAspectRatio;
+                    sourceY = (userImage.naturalHeight - sourceHeight) / 2;
+                }
+
+                offscreenCtx.drawImage(userImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                offscreenCtx.restore();
+            }
+
+            // --- 2. Draw Main User Image (high-res with scaled transformations and filters) ---
+            offscreenCtx.save();
+
+            offscreenCtx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+
+            // Calculate initial fit for the user image on the HIGH-RES canvas
+            let imgAspectRatio = userImage.naturalWidth / userImage.naturalHeight;
+            let initialDrawWidthHighRes, initialDrawHeightHighRes;
+
+            if (imgAspectRatio > offscreenCanvas.width / offscreenCanvas.height) {
+                initialDrawWidthHighRes = offscreenCanvas.width;
+                initialDrawHeightHighRes = offscreenCanvas.width / imgAspectRatio;
+            } else {
+                initialDrawHeightHighRes = offscreenCanvas.height;
+                initialDrawWidthHighRes = offscreenCanvas.height * imgAspectRatio;
+            }
+
+            // Scale the existing transformation values (imageX, imageY, scaleFactor)
+            const finalImageX = imageX * scaleRatio;
+            const finalImageY = imageY * scaleRatio;
+            const finalScaleFactor = scaleFactor; // scaleFactor is already a ratio, apply directly
+
+            let scaledWidthHighRes = initialDrawWidthHighRes * finalScaleFactor;
+            let scaledHeightHighRes = initialDrawHeightHighRes * finalScaleFactor;
+
+            offscreenCtx.translate(finalImageX + scaledWidthHighRes / 2, finalImageY + scaledHeightHighRes / 2);
+            offscreenCtx.rotate(rotationAngle * Math.PI / 180);
+            offscreenCtx.scale(flipH, flipV);
+
+            offscreenCtx.drawImage(userImage, -scaledWidthHighRes / 2, -scaledHeightHighRes / 2, scaledWidthHighRes, scaledHeightHighRes);
+
+            offscreenCtx.restore();
+            offscreenCtx.filter = 'none'; 
+
+            // --- 3. Draw Frame Image (full natural resolution) ---
+            offscreenCtx.save();
+            offscreenCtx.globalAlpha = frameOpacity; // Use current frame opacity
+            offscreenCtx.drawImage(frameImage, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+            offscreenCtx.restore();
+
+            // --- 4. Draw Facebook Overlay (if enabled, full natural resolution) ---
+            if (isFacebookProfileMode && facebookViewImageLoaded) {
+                offscreenCtx.save();
+                offscreenCtx.drawImage(facebookViewImage, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                offscreenCtx.restore();
+                console.log("Facebook Mode: Drawing Facebook View overlay on top of final image.");
+            }
+
+            // Do NOT draw grid on final image
+            // drawGrid(offscreenCtx, offscreenCanvas.width, offscreenCanvas.height); 
+
+            console.log("Final high-res image drawn.");
+            return offscreenCanvas.toDataURL('image/png');
+        }
+
 
         // --- WebRTC Camera Functions ---
         async function requestCameraPermissionAndPlay() {
@@ -1679,6 +1854,9 @@
                 setWebcamControlButtonsState(false);
                 return;
             }
+
+            // Stop any existing stream before requesting a new one
+            stopWebcam(); 
 
             try {
                 const constraints = { 
@@ -1713,7 +1891,10 @@
                     showMessageBox("Camera access was denied. Please allow camera permissions in your browser settings to use this feature.", true);
                 } else if (err.name === 'NotFoundError') {
                     showMessageBox("No camera found. Please ensure a camera is connected and enabled.", true);
-                } else {
+                } else if (err.name === 'NotReadableError') {
+                    showMessageBox("Camera is already in use by another application or browser tab. Please close other applications and try again.", true);
+                }
+                 else {
                     showMessageBox(`Could not start camera. ${err.name}: ${err.message}`, true);
                 }
                 setWebcamControlButtonsState(false);
@@ -1731,7 +1912,8 @@
                     }
                 }
                 console.log("Detected camera devices:", cameraDevices.length);
-                setWebcamControlButtonsState(localStream !== null);
+                // Re-evaluate flipCameraButton state based on detected devices
+                flipCameraButton.disabled = !(localStream !== null && cameraDevices.length > 1);
             } catch (e) {
                 console.error("Error enumerating devices:", e);
             }
@@ -1739,6 +1921,7 @@
 
         function applyWebcamTransforms() {
             let transformString = '';
+            // Apply flip to the webcam preview video element
             if (webcamPreviewFlip === -1) {
                 transformString += `scaleX(-1) `;
             }
@@ -1759,8 +1942,8 @@
             webcamVideo.pause();
             webcamVideo.currentTime = 0;
             setWebcamControlButtonsState(false);
-            webcamPreviewFlip = 1;
-            applyWebcamTransforms();
+            webcamPreviewFlip = 1; // Reset flip for next session
+            applyWebcamTransforms(); // Clear any transforms on video element
             console.log("Webcam stream stopped and state reset.");
         }
 
@@ -1771,14 +1954,17 @@
                 return null;
             }
 
+            // Set hidden canvas dimensions to match the video's intrinsic resolution for high quality capture
             hiddenCanvas.width = webcamVideo.videoWidth;
             hiddenCanvas.height = webcamVideo.videoHeight;
             let hCtx = hiddenCanvas.getContext('2d');
 
             hCtx.clearRect(0, 0, hiddenCanvas.width, hiddenCanvas.height);
 
+            // Draw the video frame to the hidden canvas
             hCtx.drawImage(webcamVideo, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
 
+            // Return the data URL from the hidden canvas
             return hiddenCanvas.toDataURL("image/png");
         }
 
@@ -1787,7 +1973,7 @@
             let imgSrc = captureFrame();
 
             if (imgSrc) {
-                setImageOnCanvas(imgSrc, webcamPreviewFlip); 
+                setImageOnCanvas(imgSrc, webcamPreviewFlip); // Pass the flip state to setImageOnCanvas
                 hidePhotoSourceModal();
             } else {
                 showMessageBox("Could not capture photo. Please ensure camera is started.", true);
@@ -1795,17 +1981,18 @@
         });
 
         flipWebcamCaptureBtn.addEventListener('click', () => {
-            webcamPreviewFlip *= -1;
-            applyWebcamTransforms();
+            webcamPreviewFlip *= -1; // Toggle horizontal flip for live video preview
+            applyWebcamTransforms(); // Apply the new flip to the video element
             console.log("Webcam live preview flip toggled. webcamPreviewFlip:", webcamPreviewFlip);
         });
 
         flipCameraButton.addEventListener('click', async () => {
             console.log("Flip Camera button clicked. Current facing mode:", webcamCurrentFacingMode);
+            // Toggle facing mode ('user' for front, 'environment' for rear)
             webcamCurrentFacingMode = (webcamCurrentFacingMode === 'user') ? 'environment' : 'user';
-            webcamPreviewFlip = 1;
+            webcamPreviewFlip = 1; // Reset live video flip when switching cameras, as orientation might change
             console.log("New facing mode:", webcamCurrentFacingMode, "webcamPreviewFlip reset to 1.");
-            await requestCameraPermissionAndPlay();
+            await requestCameraPermissionAndPlay(); // Restart webcam with new facing mode
         });
 
     </script>
